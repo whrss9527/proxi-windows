@@ -115,7 +115,7 @@ func TestSettingsGuard(t *testing.T) {
 	if policy := page.Header.Get("Content-Security-Policy"); !strings.Contains(policy, "script-src 'self'") || !strings.Contains(policy, "font-src 'self'") {
 		t.Errorf("页面应带 CSP，允许自带的字体：%s", policy)
 	}
-	for asset, contentType := range map[string]string{"/assets/settings.css": "text/css", "/assets/core.js": "text/javascript", "/assets/app.js": "text/javascript", "/assets/NotoSansSC-subset.woff2": "font/woff2"} {
+	for asset, contentType := range map[string]string{"/assets/settings.css": "text/css", "/assets/core.js": "text/javascript", "/assets/app.js": "text/javascript", "/assets/NotoSansSC-subset.woff2": "font/woff2", "/assets/brand.ico": "image/x-icon"} {
 		response, err := http.Get(fixture.base + asset)
 		if err != nil {
 			t.Fatal(err)

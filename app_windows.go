@@ -154,7 +154,7 @@ func (app *App) run(autostarted bool, settingsPage string) error {
 	go app.watchUpdates()
 
 	if created {
-		app.notify(Notice{Level: noticeInfo, Title: "ProxySwitch 已在托盘运行", Text: "单击托盘图标开关代理，右键打开菜单", Icon: iconStateOff})
+		app.notify(Notice{Level: noticeInfo, Title: "ProxySwitch 已在托盘运行", Text: "单击托盘图标打开设置，右键打开菜单", Icon: iconStateOff})
 	}
 	if app.crashedLastTime {
 		app.notify(Notice{Level: noticeWarning, Title: "ProxySwitch 上次意外退出了", Text: "详细信息已记录，点这里查看；反馈问题时附上会更快解决", Page: "diagnostics"})

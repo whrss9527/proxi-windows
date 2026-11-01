@@ -44,9 +44,13 @@ func findAppBrowser() string {
 	return ""
 }
 
-// openSettingsWindow 打开设置页；已经打开时把窗口切到前台。
+// 只复用本次运行打开的窗口；上个进程留下的页面已经无法连接旧端口。
+var openedSettingsAddress string
+
+// openSettingsWindow 打开设置页；本次运行已经打开时把窗口切到前台。
 func openSettingsWindow(address, mode string) error {
-	if focusSettingsWindow() {
+	windowAddress, _, _ := strings.Cut(address, "#")
+	if mode == "app" && windowAddress == openedSettingsAddress && focusSettingsWindow() {
 		return nil
 	}
 	procAllowSetForegroundWindow.Call(asfwAny)
@@ -64,6 +68,7 @@ func openSettingsWindow(address, mode string) error {
 				"--disable-features=Translate,msEdgeTranslate",
 			)
 			if err := command.Start(); err == nil {
+				openedSettingsAddress = windowAddress
 				go func() { _ = command.Wait() }()
 				return nil
 			}

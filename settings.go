@@ -28,6 +28,11 @@ import (
 //go:embed web
 var webFiles embed.FS
 
+// 设置窗口使用与程序文件相同的多尺寸图标，兼容 Windows 任务栏。
+//
+//go:embed assets/app.ico
+var settingsWindowIcon []byte
+
 // SettingsBackend 是设置界面用到的程序能力，Windows 上由 App 实现，开发和测试时用 devBackend。
 type SettingsBackend interface {
 	State() SettingsState
@@ -459,6 +464,7 @@ var assetTypes = map[string]string{
 	".js":  "text/javascript; charset=utf-8",
 	".svg": "image/svg+xml",
 	".png": "image/png",
+	".ico": "image/x-icon",
 	// 设置页的字体：思源黑体的常用字子集（见 tools/subset_font.py）。
 	".woff2": "font/woff2",
 }
@@ -467,7 +473,13 @@ var assetTypes = map[string]string{
 func (settings *SettingsServer) handleAsset(writer http.ResponseWriter, request *http.Request) {
 	name := request.PathValue("name")
 	contentType, allowed := assetTypes[path.Ext(name)]
-	data, err := fs.ReadFile(settings.files, name)
+	var data []byte
+	var err error
+	if name == "brand.ico" {
+		data = settingsWindowIcon
+	} else {
+		data, err = fs.ReadFile(settings.files, name)
+	}
 	if !allowed || err != nil {
 		http.NotFound(writer, request)
 		return

@@ -24,6 +24,24 @@ func TestDefaultConfigText(t *testing.T) {
 	if config.AutoSwitch.Enabled || config.AutoSwitch.DefaultAction != "keep" || config.AutoSwitch.Rules == nil {
 		t.Errorf("自动切换默认值不对：%+v", config.AutoSwitch)
 	}
+	if config.TrayClick != "settings" || defaultConfig().TrayClick != "settings" {
+		t.Error("首次运行的单击动作应为打开设置")
+	}
+}
+
+func TestTrayClickDefaultAndExplicitPreference(t *testing.T) {
+	for _, item := range []struct{ text, want string }{
+		{`{}`, "settings"},
+		{`{"tray_click":""}`, "settings"},
+		{`{"tray_click":"toggle"}`, "toggle"},
+		{`{"tray_click":"menu"}`, "menu"},
+		{`{"tray_click":" Settings "}`, "settings"},
+	} {
+		config, err := parseConfig(item.text)
+		if err != nil || config.TrayClick != item.want {
+			t.Errorf("单击动作 %s 应为 %s：%v，%+v", item.text, item.want, err, config)
+		}
+	}
 }
 
 func TestParseConfigJsonc(t *testing.T) {
