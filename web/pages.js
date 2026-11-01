@@ -51,9 +51,15 @@ function settingCard({ iconName, title, description = "", control = "", note = "
 
 function saveIndicator() {
   if (app.saving) {
-    return html`<span class="caption muted" style="display:inline-flex;gap:6px;align-items:center"><span class="spinner" style="width:12px;height:12px"></span>正在保存</span>`;
+    return html`<span class="save-status caption muted" data-save-status="saving" role="status" aria-live="polite"><span class="spinner" style="width:12px;height:12px"></span>正在保存…</span>`;
   }
-  return html`<span class="caption faint">修改后自动保存并立即生效</span>`;
+  if (app.saveResult === "saved") {
+    return html`<span class="save-status caption" data-save-status="saved" role="status" aria-live="polite">${icon("check")}已保存，修改已生效</span>`;
+  }
+  if (app.saveResult === "error") {
+    return html`<span class="save-status caption" data-save-status="error" role="status" aria-live="polite">${icon("warning")}未能保存，已恢复原设置</span>`;
+  }
+  return html`<span class="caption muted" data-save-status="idle">修改后自动保存并立即生效</span>`;
 }
 
 function pageHeader(title, extra = "") {
@@ -254,6 +260,8 @@ function heroView() {
     subtitle = html`<strong style="color:var(--text)">${profile.name}</strong>${server}<span class="chips">${status.applied.map((label) => html`<span class="chip">${label}</span>`)}${tun}</span>`;
     const latency = app.latency[profile.id];
     if (status.health === "down") {
+      title = "代理连接异常";
+      track = amberTrack;
       health = html`<span class="dot" style="background:var(--danger)"></span><span style="color:var(--danger)">连不上代理服务器：${status.health_message}</span>`;
     } else if (latency && latency.running) {
       health = html`<span class="spinner" style="width:12px;height:12px"></span>正在测速…`;
@@ -265,6 +273,8 @@ function heroView() {
       health = html`<span class="dot" style="background:var(--danger)"></span><span style="color:var(--danger)">${latency.message}</span>`;
     } else if (status.health === "ok") {
       health = html`<span class="dot" style="background:var(--success)"></span>代理服务器可以连接`;
+    } else {
+      health = html`<span class="muted">代理设置已开启，尚未检测连接</span>`;
     }
   } else if (status.state === "external") {
     track = amberTrack;
@@ -285,9 +295,12 @@ function heroView() {
   const canTest = status.state === "on" && profile && (profile.server || profile.pac);
   const terminal = status.state === "on" && status.terminal && status.terminal.length > 0;
   const saveExternal = status.state === "external" && status.external_profile;
+  if (app.busy && app.operationLabel) {
+    title = app.operationLabel;
+  }
   return html`
     <div class="card hero" style="--tint:${track === grayTrack ? "transparent" : track}">
-      <button class="hero-switch ${busy} ${warn}" role="switch" aria-checked="${checked}" aria-label="开关代理" data-action="toggle" style="--track:${track}"></button>
+      <button class="hero-switch ${busy} ${warn}" role="switch" aria-checked="${checked}" aria-label="开关代理" aria-busy="${app.busy}" data-action="toggle" style="--track:${track}" ${app.busy ? raw("disabled") : ""}></button>
       <div class="hero-text">
         <div class="hero-title">${title}</div>
         <div class="hero-subtitle">${subtitle}</div>
@@ -820,7 +833,7 @@ function proxiesPage() {
         </div>
       </div>
       <div class="stack">${profiles.map((profile, index) => profileRow(profile, index))}</div>
-      <p class="caption faint" data-tray-click-hint style="margin:14px 2px 0">${trayClickHint()}，右键托盘图标可以快速切换配置。</p>
+      <p class="caption muted" data-tray-click-hint style="margin:14px 2px 0">${trayClickHint()}，右键托盘图标可以快速切换配置。</p>
       ${policyGroupsView()}`}`;
 }
 

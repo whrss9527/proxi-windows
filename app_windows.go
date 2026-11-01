@@ -494,8 +494,8 @@ func (app *App) menuItems() []MenuItem {
 	config := app.engine.Config()
 	if config == nil {
 		return []MenuItem{
-			{Text: appName, Disabled: true, Bitmap: app.menuBrand()},
-			{Id: menuHeader, Text: "配置文件有错误", Disabled: true},
+			{Text: appName, Disabled: true, Header: "brand"},
+			{Id: menuHeader, Text: "配置文件有错误", Disabled: true, Header: "error"},
 			separator,
 			{Id: menuEditConfig, Text: "编辑配置文件..."},
 			{Id: menuSettings, Text: "设置...", Default: true},
@@ -509,24 +509,28 @@ func (app *App) menuItems() []MenuItem {
 		toggleKey = "\t" + app.hotkeys.Toggle
 	}
 	clickToggles := config.TrayClick == "toggle"
-	items := []MenuItem{{Text: appName, Disabled: true, Bitmap: app.menuBrand()}}
+	items := []MenuItem{{Text: appName, Disabled: true, Header: "brand"}}
 	switch status.State {
 	case statusOn:
 		header := "代理已开启：" + escapeMenuText(status.Profile.Name)
+		headerStyle := "on"
 		if health, _ := app.engine.HealthInfo(); health == healthDown {
 			header += "（连不上代理服务器）"
+			headerStyle = "warning"
 		}
-		items = append(items, MenuItem{Id: menuHeader, Text: header, Disabled: true}, MenuItem{Id: menuToggle, Text: "关闭代理" + toggleKey, Default: clickToggles})
+		items = append(items, MenuItem{Id: menuHeader, Text: header, Disabled: true, Header: headerStyle, Accent: status.Profile.Color}, MenuItem{Id: menuToggle, Text: "关闭代理" + toggleKey, Default: clickToggles})
 	case statusExternal:
 		items = append(items,
-			MenuItem{Id: menuHeader, Text: "系统代理由其他程序设置：" + escapeMenuText(truncateRunes(status.External, 40)), Disabled: true},
+			MenuItem{Id: menuHeader, Text: "系统代理由其他程序设置：" + escapeMenuText(truncateRunes(status.External, 40)), Disabled: true, Header: "warning"},
 			MenuItem{Id: menuToggle, Text: "关闭系统代理" + toggleKey, Default: clickToggles})
 	default:
 		header := "代理已关闭"
+		headerStyle := "off"
 		if app.engine.AutoOffPending() {
 			header = "代理已自动关闭（代理服务器连不上）"
+			headerStyle = "warning"
 		}
-		items = append(items, MenuItem{Id: menuHeader, Text: header, Disabled: true})
+		items = append(items, MenuItem{Id: menuHeader, Text: header, Disabled: true, Header: headerStyle})
 		if status.Profile != nil {
 			items = append(items, MenuItem{Id: menuToggle, Text: "开启代理" + toggleKey, Default: clickToggles})
 		} else {
@@ -585,24 +589,6 @@ func (app *App) menuItems() []MenuItem {
 		MenuItem{Id: menuExit, Text: "退出"},
 	)
 	return items
-}
-
-// 菜单标题始终用应用图标，配置项继续用配置颜色，避免把身份标识和代理开关混在一起。
-func (app *App) menuBrand() uintptr {
-	size := systemMetric(smCxMenuCheck)
-	if size <= 0 {
-		size = 16
-	}
-	key := fmt.Sprintf("brand|%d", size)
-	if bitmap, ok := app.menuBitmaps[key]; ok {
-		return bitmap
-	}
-	bitmap, err := createMenuBitmap(renderBrandIcon(size))
-	if err != nil {
-		return 0
-	}
-	app.menuBitmaps[key] = bitmap
-	return bitmap
 }
 
 // subscriptionMenu 是订阅配置的子菜单：没开启时可以直接开启；选择节点（自动选择或某个节点，显示最近测得的延迟）；

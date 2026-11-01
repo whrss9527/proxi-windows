@@ -231,6 +231,12 @@ a:hover {
   line-height: 17px;
 }
 
+.save-status { display: inline-flex; gap: 6px; align-items: center; }
+.save-status .icon { width: 14px; height: 14px; }
+.save-status[data-save-status="saved"] { color: var(--success); }
+.save-status[data-save-status="error"] { color: var(--danger); }
+.hero-switch:disabled { cursor: progress; }
+
 .hidden {
   display: none !important;
 }

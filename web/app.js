@@ -7,7 +7,10 @@ const app = {
   config: null,
   page: "proxies",
   busy: false,
+  operationLabel: "",
   saving: false,
+  pendingSaves: 0,
+  saveResult: "",
   latency: {},
   diagnostics: null,
   log: "",
@@ -61,7 +64,7 @@ function receiveState(state, options = {}) {
   const previous = app.state;
   const configChanged = !previous || configJson(state.config) !== configJson(previous.config);
   app.state = state;
-  if (configChanged) {
+  if (configChanged && !app.saving) {
     app.config = clone(state.config);
   }
   applyAppearance();
@@ -349,12 +352,16 @@ function navStatus() {
     detail = profile.name;
     if (status.health === "down") {
       color = "var(--danger)";
+      title = "代理连接异常";
       detail = `${profile.name} · 连不上`;
     }
   } else if (status.state === "external") {
     color = amberTrack;
     title = "其他程序的代理";
     detail = status.external;
+  }
+  if (app.busy && app.operationLabel) {
+    title = app.operationLabel;
   }
   return html`
     <div class="nav-status" title="${title} · ${detail}">
@@ -420,12 +427,14 @@ function renderPage({ fromPoll = false, animate = false } = {}) {
   // 重绘后把焦点放回原来的元素：按 id 找，没有 id 的输入框按 data-focus 找，按钮按 data-action 找。
   const focusId = inPage ? active.id || null : null;
   const focusKey = inPage && !focusId ? active.dataset.focus || null : null;
-  const focusAction = inPage && !focusId && !focusKey ? active.dataset.action + "|" + (active.dataset.id || active.dataset.name || active.dataset.page || active.dataset.index || "") : null;
+  const focusSetting = inPage && !focusId && !focusKey ? active.dataset.setting || null : null;
+  const actionKey = (element) => element.dataset.id || element.dataset.name || element.dataset.page || element.dataset.index || element.dataset.value || "";
+  const focusAction = inPage && !focusId && !focusKey && !focusSetting && active.dataset.action ? { action: active.dataset.action, key: actionKey(active) } : null;
   // 正在输入的文字不能因为重绘丢掉（例如刚保存的另一项返回了最新状态）。
   const typing = (focusId || focusKey) && active.tagName === "INPUT" ? { value: active.value, start: active.selectionStart, end: active.selectionEnd } : null;
   setHtml(page, pageRenderers[app.page]());
-  if (focusId || focusKey) {
-    const target = focusId ? document.getElementById(focusId) : page.querySelector(`[data-focus="${focusKey}"]`);
+  if (focusId || focusKey || focusSetting) {
+    const target = focusId ? document.getElementById(focusId) : focusKey ? page.querySelector(`[data-focus="${CSS.escape(focusKey)}"]`) : page.querySelector(`[data-setting="${CSS.escape(focusSetting)}"]`);
     if (target) {
       if (typing && target.tagName === "INPUT" && target.value !== typing.value) {
         target.value = typing.value;
@@ -441,8 +450,7 @@ function renderPage({ fromPoll = false, animate = false } = {}) {
       }
     }
   } else if (focusAction) {
-    const [action, key] = focusAction.split("|");
-    const target = [...page.querySelectorAll(`[data-action="${action}"]`)].find((element) => (element.dataset.id || element.dataset.name || element.dataset.page || element.dataset.index || "") === key);
+    const target = [...page.querySelectorAll(`[data-action="${CSS.escape(focusAction.action)}"]`)].find((element) => actionKey(element) === focusAction.key);
     if (target) {
       target.focus();
     }
@@ -486,12 +494,17 @@ function goto(pageId) {
 
 // runOperation 执行开关、切换等操作，完成后刷新状态；部分失败时程序返回 409 和最新状态，failureTitle 是这时提示的标题。
 async function runOperation(path, body, successMessage, failureTitle = "部分设置没有成功") {
+  if (app.busy) {
+    return false;
+  }
   app.busy = true;
+  app.operationLabel = path === "/api/on" ? "正在开启代理…" : path === "/api/off" ? "正在关闭代理…" : path === "/api/use" ? `正在切换到「${body.name}」…` : "正在处理…";
   renderNav();
   renderPage();
   try {
     const state = await api("POST", path, body);
     app.busy = false;
+    app.operationLabel = "";
     receiveState(state, { force: true });
     if (successMessage) {
       toast(successMessage);
@@ -499,6 +512,7 @@ async function runOperation(path, body, successMessage, failureTitle = "部分�
     return true;
   } catch (error) {
     app.busy = false;
+    app.operationLabel = "";
     if (error.state) {
       receiveState(error.state, { force: true });
       toast(error.message, "warning", failureTitle);
@@ -519,20 +533,31 @@ function saveConfig(mutate, successMessage = "", { onError = null } = {}) {
   const next = clone(app.config);
   mutate(next);
   app.config = next;
+  app.pendingSaves++;
   app.saving = true;
+  app.saveResult = "";
   renderPage();
   saveQueue = saveQueue.then(async () => {
     try {
       const state = await api("PUT", "/api/config", next);
-      app.saving = false;
+      app.pendingSaves--;
+      app.saving = app.pendingSaves > 0;
+      if (!app.saving) {
+        app.config = clone(state.config);
+        app.saveResult = "saved";
+      }
       receiveState(state, { force: true });
       if (successMessage) {
         toast(successMessage);
       }
       return true;
     } catch (error) {
-      app.saving = false;
-      app.config = clone(app.state.config);
+      app.pendingSaves--;
+      app.saving = app.pendingSaves > 0;
+      app.saveResult = "error";
+      if (!app.saving) {
+        app.config = clone(app.state.config);
+      }
       if (error.status !== 0 && error.status !== 403) {
         if (onError) {
           onError(error.message);
