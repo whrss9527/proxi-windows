@@ -259,6 +259,7 @@ def run_experience_flows(page):
         page.unroute("**/api/on")
         page.click(".hero-switch")
         check(wait_until(lambda: api.call("GET", "/api/state")["status"]["state"] == "on" and not page.evaluate("app.busy")), "失败后可以重新开启")
+        check(page.locator('.toast[data-key="proxy-operation"]').count() == 0, "重试开启后清理已经过时的操作失败提示")
 
         warning = page.evaluate("""() => {
           const original = app.state.status;
@@ -276,6 +277,8 @@ def run_experience_flows(page):
         page.focus("select[data-setting=notify_seconds]")
         page.select_option("select[data-setting=notify_seconds]", "8")
         check(wait_until(lambda: request_arrived(held)), "第一项修改开始保存")
+        page.wait_for_selector('.toast[data-key="config-save"]')
+        check("正在保存" in page.inner_text('.toast[data-key="config-save"]'), "保存较慢时页面下方也能看到进度")
         page.focus("select[data-setting=startup_action]")
         page.select_option("select[data-setting=startup_action]", "off")
         first = held.pop(0)
@@ -292,6 +295,7 @@ def run_experience_flows(page):
         third = held.pop(0)
         third.fulfill(response=third.fetch())
         check(wait_until(lambda: page.locator("[data-save-status=saved]").count() == 1), "全部完成后明确显示已保存并生效")
+        check(page.locator('.toast[data-key="config-save"]').count() == 1 and "已保存" in page.inner_text('.toast[data-key="config-save"]'), "连续修改合并为一条可见的保存结果")
         saved = read_config(info["config"])
         check(saved["notify_seconds"] == 8 and saved["startup_action"] == "off" and saved["settings_window"] == "browser", "快速连续修改三项均完整保存")
 
@@ -305,9 +309,11 @@ def run_experience_flows(page):
         page.unroute("**/api/config")
         page.select_option("select[data-setting=notify_seconds]", "3")
         check(wait_until(lambda: page.locator("[data-save-status=saved]").count() == 1), "失败后重试可成功保存")
+        check("没有保存" not in page.inner_text("#toasts"), "保存重试成功后不再保留旧的失败提示")
         page.click("[data-action=set-theme][data-value=dark]")
         check(wait_until(lambda: page.evaluate("!app.saving")), "主题保存完成")
         check(page.evaluate("document.activeElement.dataset.value") == "dark", "保存后主题按钮焦点仍在选择的选项")
+        check(page.locator('.toast[data-key="config-save"]').evaluate("element => { const r = element.getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight; }"), "滚动到设置页面下方时保存结果仍在可见区域")
         shot(page, "17_saved_feedback")
 
         page.set_viewport_size({"width": 720, "height": 640})
