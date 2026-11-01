@@ -502,15 +502,15 @@ func (app *App) menuItems() []MenuItem {
 	separator := MenuItem{Separator: true}
 	config := app.engine.Config()
 	if config == nil {
-		return []MenuItem{
-			{Text: appName, Disabled: true, Header: "brand"},
+		return organizeTrayMenu([]MenuItem{
+			{Text: appName + "\tv" + appVersion, Disabled: true, Header: "brand"},
 			{Id: menuHeader, Text: "配置文件有错误", Disabled: true, Header: "error"},
 			separator,
-			{Id: menuEditConfig, Text: "编辑配置文件..."},
-			{Id: menuSettings, Text: "设置...", Default: true},
+			{Id: menuEditConfig, Text: "编辑配置文件…"},
+			{Id: menuSettings, Text: "设置…", Default: true},
 			separator,
 			{Id: menuExit, Text: "退出"},
-		}
+		})
 	}
 	status := app.engine.Status()
 	toggleKey := ""
@@ -518,7 +518,7 @@ func (app *App) menuItems() []MenuItem {
 		toggleKey = "\t" + app.hotkeys.Toggle
 	}
 	clickToggles := config.TrayClick == "toggle"
-	items := []MenuItem{{Text: appName, Disabled: true, Header: "brand"}}
+	items := []MenuItem{{Text: appName + "\tv" + appVersion, Disabled: true, Header: "brand"}}
 	switch status.State {
 	case statusOn:
 		header := "代理已开启：" + escapeMenuText(status.Profile.Name)
@@ -543,7 +543,7 @@ func (app *App) menuItems() []MenuItem {
 		if status.Profile != nil {
 			items = append(items, MenuItem{Id: menuToggle, Text: "开启代理" + toggleKey, Default: clickToggles})
 		} else {
-			items = append(items, MenuItem{Id: menuSettings, Text: "添加代理配置...", Default: true})
+			items = append(items, MenuItem{Id: menuSettings, Text: "添加代理配置…", Default: true})
 		}
 	}
 	if len(config.Profiles) > 0 {
@@ -556,27 +556,27 @@ func (app *App) menuItems() []MenuItem {
 				text += "\t" + modifiers.Text + "+" + strconv.Itoa(index+1)
 			}
 			active := status.State == statusOn && status.Profile.Id == profile.Id
-			item := MenuItem{Id: uint32(menuProfileBase + index), Text: text, Checked: active, Radio: true, Bitmap: app.menuDot(profile.Color)}
+			item := MenuItem{Id: uint32(menuProfileBase + index), Text: text, Checked: active, Radio: true, Bitmap: app.menuDot(profile.Color), Accent: profile.Color, Icon: "profile"}
 			if profile.IsSubscription() && app.subscriptionService != nil {
 				item.Children = app.subscriptionMenu(config, profile, active)
 			}
 			items = append(items, item)
 		}
 		if groups := app.groupsMenu(config); len(groups) > 0 {
-			items = append(items, MenuItem{Text: "策略组", Children: groups})
+			items = append(items, MenuItem{Text: "策略组", Children: groups, Icon: "layers"})
 		}
 	}
 	items = append(items, separator)
 	if status.State == statusOn {
 		items = append(items, MenuItem{Id: menuTest, Text: "测试代理连接"})
 	}
-	items = append(items, MenuItem{Id: menuDiagnose, Text: "网址诊断..."})
+	items = append(items, MenuItem{Id: menuDiagnose, Text: "网址诊断…"})
 	if status.State == statusOn && status.Profile.Server != "" {
 		var commands []MenuItem
 		for index, command := range terminalCommands(serverToUrl(status.Profile.Server), status.Profile.NoProxy) {
 			commands = append(commands, MenuItem{Id: uint32(menuTerminalBase + index), Text: command.Label})
 		}
-		items = append(items, MenuItem{Text: "复制终端代理命令", Children: commands})
+		items = append(items, MenuItem{Text: "复制终端代理命令", Children: commands, Icon: "terminal"})
 	}
 	if len(config.AutoSwitch.Rules) > 0 {
 		items = append(items, MenuItem{Id: menuAutoSwitch, Text: "按网络自动切换", Checked: config.AutoSwitch.Enabled})
@@ -593,13 +593,13 @@ func (app *App) menuItems() []MenuItem {
 	items = append(items,
 		MenuItem{Id: menuFloating, Text: "悬浮网速按钮", Checked: config.FloatingWidget.Enabled},
 		MenuItem{Id: menuFloatingReset, Text: "重置悬浮位置", Disabled: !config.FloatingWidget.Enabled},
-		MenuItem{Id: menuSettings, Text: "设置...", Default: config.TrayClick == "settings"},
+		MenuItem{Id: menuSettings, Text: "设置…", Default: config.TrayClick == "settings"},
 		MenuItem{Id: menuAutostart, Text: "开机自动启动", Checked: isAutostartEnabled()},
 		MenuItem{Id: menuUpdate, Text: app.updateMenuText()},
 		separator,
 		MenuItem{Id: menuExit, Text: "退出"},
 	)
-	return items
+	return organizeTrayMenu(items)
 }
 
 // subscriptionMenu 是订阅配置的子菜单：没开启时可以直接开启；选择节点（自动选择或某个节点，显示最近测得的延迟）；

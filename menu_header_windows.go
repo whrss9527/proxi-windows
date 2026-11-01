@@ -83,8 +83,11 @@ type drawItemStruct struct {
 	itemData                                      uintptr
 }
 type menuHeaderEntry struct {
-	text         []uint16
-	kind, accent string
+	text                                    []uint16
+	kind, accent                            string
+	shortcut                                []uint16
+	icon                                    string
+	disabled, checked, radio, bold, submenu bool
 }
 type menuHeaderRenderer struct {
 	dpi                          int
@@ -94,6 +97,8 @@ type menuHeaderRenderer struct {
 	entries                      map[uintptr]menuHeaderEntry
 	dark, highContrast           bool
 	systemBackground, systemText color.NRGBA
+	menuBrush                    uintptr
+	glyphs                       map[string]uintptr
 }
 
 func newMenuHeaderRenderer(window uintptr) *menuHeaderRenderer {
@@ -143,26 +148,40 @@ func menuHeaderRendererAtDpi(dpi int) *menuHeaderRenderer {
 	} else {
 		r.boldFont = r.font
 	}
-	r.icon, _ = createIcon(renderBrandIcon(r.dp(18)))
+	r.icon, _ = createIcon(renderBrandIcon(r.dp(24)))
 	return r
 }
 
 func (r *menuHeaderRenderer) dp(value int) int { return (value*r.dpi + 48) / 96 }
 func (r *menuHeaderRenderer) close() {
+	for _, icon := range r.glyphs {
+		procDestroyIcon.Call(icon)
+	}
+	r.glyphs = nil
+	if r.menuBrush != 0 {
+		procDeleteObject.Call(r.menuBrush)
+		r.menuBrush = 0
+	}
 	for _, font := range r.ownedFonts {
 		procDeleteObject.Call(font)
 	}
+	r.ownedFonts = nil
 	if r.icon != 0 {
 		procDestroyIcon.Call(r.icon)
+		r.icon = 0
 	}
 }
 
 func (r *menuHeaderRenderer) register(menu, position uintptr, item MenuItem) {
 	key := uintptr(len(r.entries) + 1)
 	text := syscall.StringToUTF16(strings.NewReplacer("&&", "&", "\x00", " ", "\r", " ", "\n", " ").Replace(item.Text))
-	r.entries[key] = menuHeaderEntry{text: text, kind: item.Header, accent: item.Accent}
+	label, shortcut, _ := strings.Cut(syscall.UTF16ToString(text), "\t")
+	r.entries[key] = menuHeaderEntry{text: syscall.StringToUTF16(label), kind: item.Header, accent: item.Accent, shortcut: syscall.StringToUTF16(shortcut), icon: item.Icon, disabled: item.Disabled, checked: item.Checked, radio: item.Radio, bold: item.Default, submenu: len(item.Children) > 0}
 	// 保留完整文本给系统菜单的辅助功能接口，不把 Go 指针存入原生菜单。
 	info := menuItemInfoW{mask: miimFType | miimData | miimString, kind: mftOwnerDraw, itemData: key, typeData: &text[0]}
+	if item.Radio {
+		info.kind |= mftRadio
+	}
 	info.size = uint32(unsafe.Sizeof(info))
 	procSetMenuItemInfoW.Call(menu, position, 1, uintptr(unsafe.Pointer(&info)))
 }
@@ -175,6 +194,9 @@ func (r *menuHeaderRenderer) measure(item *measureItemStruct) bool {
 	if !ok {
 		return false
 	}
+	if entry.kind == "" || entry.kind == "section" {
+		return r.measureAction(item, entry)
+	}
 	dc, _, _ := procGetDC.Call(0)
 	defer procReleaseDC.Call(0, dc)
 	font := r.boldFont
@@ -186,9 +208,9 @@ func (r *menuHeaderRenderer) measure(item *measureItemStruct) bool {
 	rect := menuRect{}
 	procDrawTextW.Call(dc, uintptr(unsafe.Pointer(&entry.text[0])), ^uintptr(0), uintptr(unsafe.Pointer(&rect)), dtCalcRect|dtSingleLine|dtNoPrefix)
 	item.width = uint32(min(max(int(rect.right)+r.dp(56), r.dp(280)), r.maxWidth))
-	height := max(r.dp(38), int(rect.bottom)+r.dp(16))
+	height := max(r.dp(42), int(rect.bottom)+r.dp(18))
 	if entry.kind == "brand" {
-		height = max(r.dp(28), int(rect.bottom)+r.dp(8))
+		height = max(r.dp(34), int(rect.bottom)+r.dp(10))
 	}
 	item.height = uint32(height)
 	return true
@@ -216,6 +238,9 @@ func (r *menuHeaderRenderer) draw(item *drawItemStruct) bool {
 	if !ok {
 		return false
 	}
+	if entry.kind == "" || entry.kind == "section" {
+		return r.drawAction(item, entry)
+	}
 	state, _, _ := procSaveDC.Call(item.dc)
 	defer procRestoreDC.Call(item.dc, state)
 	palette := headerPalette(entry.kind, entry.accent, r.dark, r.highContrast, r.systemBackground, r.systemText)
@@ -225,11 +250,12 @@ func (r *menuHeaderRenderer) draw(item *drawItemStruct) bool {
 	textRect.right -= int32(r.dp(16))
 	font := r.boldFont
 	if entry.kind == "brand" {
-		font = r.font
+		font = r.boldFont
+		textRect.left = item.rect.left + int32(r.dp(46))
 		if r.icon != 0 {
-			size := r.dp(18)
+			size := r.dp(24)
 			y := item.rect.top + (item.rect.bottom-item.rect.top-int32(size))/2
-			procDrawIconEx.Call(item.dc, uintptr(item.rect.left+int32(r.dp(10))), uintptr(y), r.icon, uintptr(size), uintptr(size), 0, 0, 3)
+			procDrawIconEx.Call(item.dc, uintptr(item.rect.left+int32(r.dp(12))), uintptr(y), r.icon, uintptr(size), uintptr(size), 0, 0, 3)
 		}
 	} else {
 		card := item.rect
@@ -247,6 +273,18 @@ func (r *menuHeaderRenderer) draw(item *drawItemStruct) bool {
 	procSetBkMode.Call(item.dc, 1)
 	procSetTextColor.Call(item.dc, headerColorRef(palette.text))
 	procDrawTextW.Call(item.dc, uintptr(unsafe.Pointer(&entry.text[0])), ^uintptr(0), uintptr(unsafe.Pointer(&textRect)), dtSingleLine|dtVCenter|dtNoPrefix|dtEndEllipsis)
+	if entry.kind == "brand" && len(entry.shortcut) > 1 {
+		versionRect := item.rect
+		versionRect.left = max(textRect.left, item.rect.right-int32(r.dp(94)))
+		versionRect.right -= int32(r.dp(14))
+		paint := palette.text
+		if !r.highContrast {
+			paint = mixHeaderColor(paint, palette.background, .3)
+		}
+		procSelectObject.Call(item.dc, r.font)
+		procSetTextColor.Call(item.dc, headerColorRef(paint))
+		procDrawTextW.Call(item.dc, uintptr(unsafe.Pointer(&entry.shortcut[0])), ^uintptr(0), uintptr(unsafe.Pointer(&versionRect)), dtSingleLine|dtVCenter|dtNoPrefix|dtEndEllipsis|2)
+	}
 	return true
 }
 

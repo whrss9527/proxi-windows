@@ -50,6 +50,7 @@ type MenuItem struct {
 	// Header 是只读信息的视觉样式；保持禁用状态，但由程序绘制清晰的文字和颜色。
 	Header string
 	Accent string
+	Icon   string
 }
 
 type Tray struct {
@@ -190,6 +191,9 @@ func (tray *Tray) ShowMenu(items []MenuItem, anchor point) uint32 {
 	if menu == 0 {
 		return 0
 	}
+	if headers != nil {
+		headers.styleMenu(menu)
+	}
 	// 销毁菜单时子菜单一起销毁。
 	defer procDestroyMenu.Call(menu)
 	// 先把窗口设为前台，否则点击菜单外部时菜单不会消失。
@@ -231,11 +235,14 @@ func buildMenu(items []MenuItem, texts *[]*uint16, headers *menuHeaderRenderer) 
 			procAppendMenuW.Call(menu, flags|mfPopup, subMenu, uintptr(unsafe.Pointer(text)))
 			// 子菜单项没有命令 id，按位置设置样式。
 			setMenuItemStyle(menu, uintptr(position), true, item)
+			if headers != nil {
+				headers.register(menu, uintptr(position), item)
+			}
 			position++
 			continue
 		}
 		procAppendMenuW.Call(menu, flags, uintptr(item.Id), uintptr(unsafe.Pointer(text)))
-		if item.Header != "" && headers != nil {
+		if headers != nil {
 			headers.register(menu, uintptr(position), item)
 		} else {
 			setMenuItemStyle(menu, uintptr(item.Id), false, item)
