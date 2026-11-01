@@ -647,11 +647,18 @@ def run_flows(page, api, info, config_path):
     page.click("[data-page=general]")
     page.click("[data-action=set-theme][data-value=dark]")
     check(wait_until(lambda: page.evaluate("document.documentElement.dataset.theme") == "dark"), "切换到深色主题")
-    check(page.get_attribute("#favicon", "href") == "/assets/brand.svg" and page.locator(".brand img[src='/assets/brand.svg']").count() == 1, "应用标识与网站图标不随代理状态改变")
+    check(page.get_attribute("#favicon", "href") == "/assets/brand.ico" and page.locator(".brand img[src='/assets/brand.svg']").count() == 1, "应用标识与窗口图标不随代理状态改变")
     page.click("[data-action=set-tray-icon][data-value=toggle]")
     check(wait_until(lambda: read_config(config_path).get("tray_icon") == "toggle"), "托盘可以选择按配置颜色显示开关")
     page.click("[data-action=set-tray-icon][data-value=brand]")
     check(wait_until(lambda: read_config(config_path).get("tray_icon") == "brand"), "托盘可以选择应用图标与状态角标")
+    check(page.input_value("select[data-setting=tray_click]") == "settings", "默认单击托盘打开设置")
+    for value, hint in [("toggle", "开关代理"), ("menu", "显示菜单"), ("settings", "打开设置")]:
+        page.select_option("select[data-setting=tray_click]", value)
+        check(wait_until(lambda: read_config(config_path).get("tray_click") == value), f"保存单击动作：{hint}")
+        page.click("[data-page=proxies]")
+        check(page.inner_text("[data-tray-click-hint]").startswith("单击托盘图标" + hint), f"操作提示跟随单击动作：{hint}")
+        page.click("[data-page=general]")
     shot(page, "16_icon_settings_dark")
     page.click("[data-page=proxies]")
     for name in ["本机代理", "学校 PAC", "SOCKS5 备用"]:
@@ -1280,6 +1287,7 @@ def run_sync_flows(page, api, config_path):
     check(wait_until(lambda: read_config(config_path)["notify_seconds"] != 8), "恢复默认设置")
     config = read_config(config_path)
     check(config["custom_rules"] == rules_before and config["sync"]["enabled"] and config["editor"] == "", "恢复默认设置不影响规则和同步")
+    check(config["tray_click"] == "settings", "恢复默认设置后单击托盘打开设置")
 
     # 立即同步、打开文件夹。
     page.click("[data-page=sync]")

@@ -3,13 +3,13 @@
     "FileVersion": {
       "Major": 2,
       "Minor": 5,
-      "Patch": 0,
+      "Patch": 1,
       "Build": 0
     },
     "ProductVersion": {
       "Major": 2,
       "Minor": 5,
-      "Patch": 0,
+      "Patch": 1,
       "Build": 0
     },
     "FileFlagsMask": "3f",
@@ -22,12 +22,12 @@
     "Comments": "https://github.com/whrss9527/proxyswitch",
     "CompanyName": "",
     "FileDescription": "ProxySwitch",
-    "FileVersion": "2.5.0.0",
+    "FileVersion": "2.5.1.0",
     "InternalName": "ProxySwitch",
     "LegalCopyright": "GPL-3.0 License",
     "OriginalFilename": "ProxySwitch.exe",
     "ProductName": "ProxySwitch",
-    "ProductVersion": "2.5.0"
+    "ProductVersion": "2.5.1"
   },
   "VarFileInfo": {
     "Translation": {

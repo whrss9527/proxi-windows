@@ -765,12 +765,16 @@ function policyGroupsView() {
     </div>`;
 }
 
+function trayClickHint() {
+  return ({ settings: "单击托盘图标打开设置", toggle: "单击托盘图标开关代理", menu: "单击托盘图标显示菜单" })[app.config?.tray_click] || "单击托盘图标打开设置";
+}
+
 function emptyView() {
   return html`
     <div class="card empty">
       ${brandLogo("empty-logo")}
       <h2>添加第一个代理配置</h2>
-      <p>ProxySwitch 用来一键开关 Windows 的代理。先告诉它代理的地址，之后单击任务栏右下角的托盘图标就能开关。</p>
+      <p>先添加代理地址或订阅，再用页面上的开关连接。${trayClickHint()}。</p>
       <div class="choices">
         <button class="choice" data-action="detect">${icon("search")}<strong>自动检测</strong><span>查找本机正在运行的代理软件，一键添加</span></button>
         <button class="choice" data-action="add">${icon("pencil")}<strong>手动填写</strong><span>填写代理服务器的地址和端口</span></button>
@@ -816,7 +820,7 @@ function proxiesPage() {
         </div>
       </div>
       <div class="stack">${profiles.map((profile, index) => profileRow(profile, index))}</div>
-      <p class="caption faint" style="margin:14px 2px 0">单击托盘图标开关代理，右键托盘图标可以快速切换配置。</p>
+      <p class="caption faint" data-tray-click-hint style="margin:14px 2px 0">${trayClickHint()}，右键托盘图标可以快速切换配置。</p>
       ${policyGroupsView()}`}`;
 }
 

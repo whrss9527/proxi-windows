@@ -132,7 +132,7 @@ func defaultConfig() *Config {
 		StartupAction:   "keep",
 		OffMode:         "direct",
 		HealthCheck:     "notify",
-		TrayClick:       "toggle",
+		TrayClick:       "settings",
 		TrayDoubleClick: "none",
 		TrayIcon:        "brand",
 		Theme:           "system",
@@ -177,8 +177,8 @@ const defaultConfigText = `// ProxySwitch 配置文件。推荐在托盘菜单�
   // 代理服务器连不上时：notify 提醒 / auto_off 自动关闭代理 / off 不检查
   "health_check": "notify",
 
-  // 单击托盘图标：toggle 开关代理 / settings 打开设置 / menu 弹出菜单
-  "tray_click": "toggle",
+  // 单击托盘图标：settings 打开设置（默认）/ toggle 开关代理 / menu 弹出菜单
+  "tray_click": "settings",
   // 双击托盘图标：none 不响应 / settings 打开设置 / toggle 开关代理（设置后单击会等双击判定，稍有延迟）
   "tray_double_click": "none",
   // 托盘图标：brand 应用标识与状态角标 / toggle 按配置颜色显示开关
@@ -427,7 +427,7 @@ func normalizeConfig(config *Config) {
 	config.StartupAction = lowerTrim(config.StartupAction, "keep")
 	config.OffMode = lowerTrim(config.OffMode, "direct")
 	config.HealthCheck = lowerTrim(config.HealthCheck, "notify")
-	config.TrayClick = lowerTrim(config.TrayClick, "toggle")
+	config.TrayClick = lowerTrim(config.TrayClick, "settings")
 	config.TrayDoubleClick = lowerTrim(config.TrayDoubleClick, "none")
 	config.TrayIcon = lowerTrim(config.TrayIcon, "brand")
 	config.Theme = lowerTrim(config.Theme, "system")
