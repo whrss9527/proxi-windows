@@ -203,7 +203,7 @@ func TestEngineShare(t *testing.T) {
 
 func TestShareHistory(t *testing.T) {
 	connection := func(id, source, host, start string, upload int64) CoreConnection {
-		item := CoreConnection{Id: id, Upload: upload, Download: upload * 10, Start: start, Chains: []string{"香港 01", "ProxySwitch"}, Rule: "RuleSet", RulePayload: "proxy-1"}
+		item := CoreConnection{Id: id, Upload: upload, Download: upload * 10, Start: start, Chains: []string{"香港 01", "Proxi"}, Rule: "RuleSet", RulePayload: "proxy-1"}
 		item.Metadata.SourceIp, item.Metadata.Host, item.Metadata.DestinationPort, item.Metadata.InboundName = source, host, "443", coreShareListener
 		return item
 	}

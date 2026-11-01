@@ -8,12 +8,12 @@ import (
 	"strings"
 )
 
-// 链接：proxyswitch:// 命令（和 macOS 版相同），以及机场网站「一键导入」按钮用的 clash://install-config。
-// Windows 版把这两种链接登记给自己（见 links_windows.go）：浏览器或脚本打开链接时启动 ProxySwitch.exe，
+// 链接：proxi:// 命令（和 macOS 版相同），以及机场网站「一键导入」按钮用的 clash://install-config。
+// Windows 版把这两种链接登记给自己（见 links_windows.go）：浏览器或脚本打开链接时启动 Proxi.exe，
 // 链接换成和命令行一样的命令交给托盘程序执行。
 
 const (
-	linkScheme      = "proxyswitch"
+	linkScheme      = "proxi"
 	clashLinkScheme = "clash"
 )
 
@@ -28,16 +28,16 @@ type LinkRequest struct {
 // isLink 表示命令行参数是链接，而不是命令。
 func isLink(text string) bool {
 	scheme, _, found := strings.Cut(strings.TrimSpace(text), ":")
-	return found && (strings.EqualFold(scheme, linkScheme) || strings.EqualFold(scheme, clashLinkScheme))
+	return found && (strings.EqualFold(scheme, linkScheme) || strings.EqualFold(scheme, legacyLinkScheme) || strings.EqualFold(scheme, clashLinkScheme))
 }
 
-// parseLink 解析 proxyswitch:// 或 clash://install-config 链接。
+// parseLink 解析 proxi:// 或 clash://install-config 链接。
 func parseLink(text string) (LinkRequest, error) {
 	parsed, err := url.Parse(strings.TrimSpace(text))
 	if err != nil {
 		return LinkRequest{}, fmt.Errorf("链接格式不对：%v", err)
 	}
-	// proxyswitch://share/on 的命令在主机名的位置，proxyswitch:share/on 这样的写法在 Opaque 里。
+	// proxi://share/on 的命令在主机名的位置，proxi:share/on 这样的写法在 Opaque 里。
 	command, rest := strings.ToLower(parsed.Host), parsed.Path
 	if parsed.Opaque != "" {
 		command, rest, _ = strings.Cut(parsed.Opaque, "/")
@@ -51,7 +51,7 @@ func parseLink(text string) (LinkRequest, error) {
 			return LinkRequest{}, fmt.Errorf("不认识的 clash:// 链接：%s", text)
 		}
 		return importLink(query)
-	case linkScheme:
+	case linkScheme, legacyLinkScheme:
 	default:
 		return LinkRequest{}, fmt.Errorf("不认识的链接：%s", text)
 	}
@@ -68,7 +68,7 @@ func parseLink(text string) (LinkRequest, error) {
 			name = strings.TrimSpace(rest)
 		}
 		if name == "" {
-			return LinkRequest{}, errors.New("链接里没有配置名，例如 proxyswitch://use?name=公司代理")
+			return LinkRequest{}, errors.New("链接里没有配置名，例如 proxi://use?name=公司代理")
 		}
 		return LinkRequest{Command: "use", Argument: name}, nil
 	case "share", "lan":

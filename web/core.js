@@ -147,7 +147,7 @@ function trayPreview(mode, on, color) {
 
 // ---------- 接口 ----------
 
-const tokenKey = "proxyswitch-token";
+const tokenKey = "proxi-token";
 const pageToken = (() => {
   const query = new URLSearchParams(location.search);
   const token = query.get("token");
@@ -183,7 +183,7 @@ async function api(method, path, body) {
     if (connectionLost) {
       connectionLost("exited");
     }
-    throw new ApiError("连不上 ProxySwitch，它可能已经退出", 0);
+    throw new ApiError("连不上 Proxi，它可能已经退出", 0);
   }
   if (response.status === 403) {
     if (connectionLost) {

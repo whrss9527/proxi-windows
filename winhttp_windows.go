@@ -88,14 +88,14 @@ func (app *App) SetWinHttp(useProxy bool) (WinHttpInfo, error) {
 	return app.WinHttpInfo(), nil
 }
 
-// warnWinHttpOnExit 在从托盘菜单退出前提醒：WinHTTP 还指向内置内核，内核随 ProxySwitch 退出后系统服务会连不上。
-// 系统通知留在通知中心，点它会重新打开 ProxySwitch 的系统集成页。
+// warnWinHttpOnExit 在从托盘菜单退出前提醒：WinHTTP 还指向内置内核，内核随 Proxi 退出后系统服务会连不上。
+// 系统通知留在通知中心，点它会重新打开 Proxi 的系统集成页。
 func (app *App) warnWinHttpOnExit() {
 	proxy, _, err := readWinHttpProxy()
 	if err != nil || !app.engine.WinHttpUsesCore(proxy) {
 		return
 	}
-	app.notify(Notice{Level: noticeWarning, Title: "WinHTTP 还在使用内置内核的代理", Text: "ProxySwitch 退出后 " + proxy + " 就用不了了，Windows 更新等系统服务可能连不上。点这里打开 ProxySwitch 改回直连", Page: "system"})
+	app.notify(Notice{Level: noticeWarning, Title: "WinHTTP 还在使用内置内核的代理", Text: "Proxi 退出后 " + proxy + " 就用不了了，Windows 更新等系统服务可能连不上。点这里打开 Proxi 改回直连", Page: "system"})
 	if app.toasts != nil {
 		app.toasts.flush(2 * time.Second)
 	}

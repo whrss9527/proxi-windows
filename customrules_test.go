@@ -41,9 +41,9 @@ func TestCustomRuleLines(t *testing.T) {
 		{Value: "不是域名", Policy: rulePolicyProxy},
 	}
 	want := []string{
-		"DOMAIN-SUFFIX,youtube.com,ProxySwitch",
+		"DOMAIN-SUFFIX,youtube.com,Proxi",
 		"DOMAIN-SUFFIX,intranet.example.com,DIRECT",
-		"IP-CIDR,8.8.8.8/32,ProxySwitch,no-resolve",
+		"IP-CIDR,8.8.8.8/32,Proxi,no-resolve",
 		"IP-CIDR6,2001:db8::/32,REJECT,no-resolve",
 	}
 	if got := customRuleLines(rules, nil); !reflect.DeepEqual(got, want) {
@@ -61,7 +61,7 @@ func TestProgramCustomRules(t *testing.T) {
 		{CustomRule{Value: " \"WeChat.exe\" "}, true, CustomRule{Type: customRuleProgram, Value: "WeChat.exe", Policy: rulePolicyProxy}},
 		{CustomRule{Type: "Program", Value: "Telegram", Policy: "Direct"}, true, CustomRule{Type: customRuleProgram, Value: "Telegram.exe", Policy: rulePolicyDirect}},
 		{CustomRule{Type: "program", Value: "C:/Games/Steam/steam.exe"}, true, CustomRule{Type: customRuleProgram, Value: `C:\Games\Steam\steam.exe`, Policy: rulePolicyProxy}},
-		{CustomRule{Type: "program", Value: "proxyswitch.test"}, false, CustomRule{Type: customRuleProgram, Value: "proxyswitch.test", Policy: rulePolicyProxy}},
+		{CustomRule{Type: "program", Value: "proxi.test"}, false, CustomRule{Type: customRuleProgram, Value: "proxi.test", Policy: rulePolicyProxy}},
 		{CustomRule{Value: "www.example.com"}, true, CustomRule{Value: "www.example.com", Policy: rulePolicyProxy}},
 	} {
 		rule := item.rule
@@ -137,7 +137,7 @@ func TestCustomRulesConfig(t *testing.T) {
 // 自定义规则排在分流规则前面，全局代理时也生效。
 func TestCoreConfigCustomRules(t *testing.T) {
 	settings := CoreSettings{Port: 17890, Active: "p1", Mode: "rule", GeoReady: true, Subscriptions: []CoreSubscription{{Id: "p1"}},
-		CustomRules: []string{"DOMAIN-SUFFIX,youtube.com,ProxySwitch"}, Rules: builtinRules(builtinChinaDirect, "DIRECT")}
+		CustomRules: []string{"DOMAIN-SUFFIX,youtube.com,Proxi"}, Rules: builtinRules(builtinChinaDirect, "DIRECT")}
 	rules := func(settings CoreSettings) []string {
 		text := string(coreConfigText(settings, "127.0.0.1:9090", "secret"))
 		start := strings.Index(text, `"rules": [`)
@@ -161,7 +161,7 @@ func TestEngineCustomRules(t *testing.T) {
 	if err := engine.SaveConfig(updated); err != nil {
 		t.Fatal(err)
 	}
-	if got := core.last().CustomRules; !reflect.DeepEqual(got, []string{"DOMAIN-SUFFIX,youtube.com,ProxySwitch"}) {
+	if got := core.last().CustomRules; !reflect.DeepEqual(got, []string{"DOMAIN-SUFFIX,youtube.com,Proxi"}) {
 		t.Errorf("保存后应把启用的自定义规则交给内核：%v", got)
 	}
 	if reloaded, _, _ := loadConfig(engine.paths.Config); len(reloaded.CustomRules) != 2 || reloaded.CustomRules[0].Value != "youtube.com" || !reloaded.CustomRules[1].Disabled {

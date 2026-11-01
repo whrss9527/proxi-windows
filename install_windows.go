@@ -16,16 +16,16 @@ import (
 	"unsafe"
 )
 
-// 安装版：安装程序（installer/ProxySwitch.nsi）把 ProxySwitch 装到 %LOCALAPPDATA%\Programs\ProxySwitch，在开始菜单
+// 安装版：安装程序（installer/Proxi.nsi）把 Proxi 装到 %LOCALAPPDATA%\Programs\Proxi，在开始菜单
 // 里加快捷方式，在「设置 → 应用」里登记卸载项（都在当前用户下，不需要管理员权限）。卸载项执行的是
-// ProxySwitch.exe --uninstall：程序自己退出正在运行的实例、关闭它开启的代理、取消开机自启和链接等登记，
+// Proxi.exe --uninstall：程序自己退出正在运行的实例、关闭它开启的代理、取消开机自启和链接等登记，
 // 再在退出后删掉安装目录。直接下载的 exe 也可以用 --uninstall 清理这些设置。
 
 const (
 	uninstallKey = `Software\Microsoft\Windows\CurrentVersion\Uninstall\` + appName
 	// uninstallShortcutValue 是安装程序记在卸载项里的开始菜单快捷方式的位置，卸载时删掉它。
 	uninstallShortcutValue = "StartMenuShortcut"
-	// closeTimeout 是等正在运行的 ProxySwitch 退出的时间：它要先关闭代理和内核。
+	// closeTimeout 是等正在运行的 Proxi 退出的时间：它要先关闭代理和内核。
 	closeTimeout = 20 * time.Second
 )
 
@@ -49,6 +49,7 @@ func isInstalledCopy(executable string) bool {
 // refreshInstallInfo 在安装版启动时让「设置 → 应用」里显示的版本跟上程序内更新后的版本，并删掉安装和更新时
 // 留下的旧程序文件。
 func refreshInstallInfo() {
+	migrateLegacyInstallInfo()
 	executable, err := os.Executable()
 	if err != nil {
 		return
@@ -85,7 +86,7 @@ func closeRunningInstance(timeout time.Duration) error {
 	deadline := time.Now().Add(timeout)
 	for instanceRunning() {
 		if time.Now().After(deadline) {
-			return errors.New("ProxySwitch 没有退出")
+			return errors.New("Proxi 没有退出")
 		}
 		time.Sleep(200 * time.Millisecond)
 	}
@@ -123,12 +124,12 @@ func runUninstall(paths Paths, arguments []string) int {
 		return exitFailure
 	}
 	installed := isInstalledCopy(executable)
-	if !quiet && !askYesNo("要卸载 ProxySwitch 吗？\n\n会先退出 ProxySwitch、关闭它开启的代理，再取消开机自启、网页链接和通知的登记。", false) {
+	if !quiet && !askYesNo("要卸载 Proxi 吗？\n\n会先退出 Proxi、关闭它开启的代理，再取消开机自启、网页链接和通知的登记。", false) {
 		return exitFailure
 	}
 	if err := closeRunningInstance(closeTimeout); err != nil {
 		if !quiet {
-			messageBox(0, "ProxySwitch 还在运行，请从托盘图标的菜单里选「退出」，然后再卸载。", appName, mbOk|mbIconWarning|mbSetForeground|mbTopmost)
+			messageBox(0, "Proxi 还在运行，请从托盘图标的菜单里选「退出」，然后再卸载。", appName, mbOk|mbIconWarning|mbSetForeground|mbTopmost)
 		}
 		return exitFailure
 	}
@@ -137,7 +138,7 @@ func runUninstall(paths Paths, arguments []string) int {
 	problems := cleanUpSystem(paths, quiet)
 	removeData := false
 	if !quiet && !paths.Portable {
-		removeData = askYesNo("要同时删除 ProxySwitch 的配置、订阅和日志吗？\n\n"+paths.Dir+"\n\n选「否」会保留，以后重新安装接着用。", true)
+		removeData = askYesNo("要同时删除 Proxi 的配置、订阅和日志吗？\n\n"+paths.Dir+"\n\n选「否」会保留，以后重新安装接着用。", true)
 	}
 	if installed {
 		if shortcut := readRegistryString(hkeyCurrentUser, uninstallKey, uninstallShortcutValue); strings.EqualFold(filepath.Ext(shortcut), ".lnk") {
@@ -171,9 +172,9 @@ func runUninstall(paths Paths, arguments []string) int {
 		}
 		return exitSuccess
 	}
-	text := "ProxySwitch 已卸载。"
+	text := "Proxi 已卸载。"
 	if !installed {
-		text = "已经清理了 ProxySwitch 在这台电脑上的设置，现在可以删除这个程序文件了：\n" + executable
+		text = "已经清理了 Proxi 在这台电脑上的设置，现在可以删除这个程序文件了：\n" + executable
 	}
 	if !removeData && !paths.Portable {
 		text += "\n\n配置保留在 " + paths.Dir + "，以后重新安装接着用。"
@@ -190,7 +191,7 @@ func runUninstall(paths Paths, arguments []string) int {
 	return exitSuccess
 }
 
-// cleanUpSystem 撤销 ProxySwitch 对这台电脑的设置：关闭它开启的代理，取消开机自启、网页链接和通知的登记；
+// cleanUpSystem 撤销 Proxi 对这台电脑的设置：关闭它开启的代理，取消开机自启、网页链接和通知的登记；
 // WinHTTP 还指向内置内核时问一下改回直连（要管理员确认）。返回没有完成的步骤。
 func cleanUpSystem(paths Paths, quiet bool) []string {
 	var problems []string
@@ -205,7 +206,7 @@ func cleanUpSystem(paths Paths, quiet bool) []string {
 				}
 			}
 			if proxy, _, err := readWinHttpProxy(); err == nil && app.engine.WinHttpUsesCore(proxy) && !quiet &&
-				askYesNo("Windows 更新等系统服务（WinHTTP）的代理还是 ProxySwitch 内核的地址 "+proxy+"，卸载后它们会连不上网。\n\n要改回直连吗？需要管理员确认。", false) {
+				askYesNo("Windows 更新等系统服务（WinHTTP）的代理还是 Proxi 内核的地址 "+proxy+"，卸载后它们会连不上网。\n\n要改回直连吗？需要管理员确认。", false) {
 				if err := writeWinHttpProxy("", ""); err != nil {
 					problems = append(problems, "WinHTTP 改回直连："+err.Error())
 				}
@@ -217,8 +218,8 @@ func cleanUpSystem(paths Paths, quiet bool) []string {
 			problems = append(problems, "取消开机自启："+err.Error())
 		}
 	}
-	for _, scheme := range []string{linkScheme, clashLinkScheme} {
-		if err := unregisterProxySwitchLink(scheme); err != nil {
+	for _, scheme := range []string{linkScheme, legacyLinkScheme, clashLinkScheme} {
+		if err := unregisterProxiLink(scheme); err != nil {
 			problems = append(problems, "取消 "+scheme+":// 链接的登记："+err.Error())
 		}
 	}
@@ -228,11 +229,11 @@ func cleanUpSystem(paths Paths, quiet bool) []string {
 	return problems
 }
 
-// unregisterProxySwitchLink 取消 scheme 链接对 ProxySwitch 的登记，不管登记的是哪个位置的 ProxySwitch.exe
-// 或 ProxySwitch-arm64.exe（程序挪过位置时登记的可能是原来的路径）。
-func unregisterProxySwitchLink(scheme string) error {
+// unregisterProxiLink 取消 scheme 链接对 Proxi 的登记，不管登记的是哪个位置的 Proxi.exe
+// 或 Proxi-arm64.exe（程序挪过位置时登记的可能是原来的路径）。
+func unregisterProxiLink(scheme string) error {
 	command := readRegistryString(hkeyCurrentUser, classesKey+scheme+`\shell\open\command`, "")
-	if !strings.HasPrefix(strings.ToLower(handlerName(command)), strings.ToLower(appName)) {
+	if !strings.HasPrefix(strings.ToLower(handlerName(command)), strings.ToLower(appName)) && !legacyOwnedCommand(command) {
 		return nil
 	}
 	return unregisterLink(scheme, commandProgram(command))
@@ -256,29 +257,29 @@ func (plan removalPlan) empty() bool {
 const removalScript = `@echo off
 set tries=0
 :wait
-"%SystemRoot%\System32\tasklist.exe" /fi "pid eq %PROXYSWITCH_PID%" /nh 2>nul | "%SystemRoot%\System32\find.exe" "%PROXYSWITCH_PID%" >nul || goto gone
+"%SystemRoot%\System32\tasklist.exe" /fi "pid eq %PROXI_PID%" /nh 2>nul | "%SystemRoot%\System32\find.exe" "%PROXI_PID%" >nul || goto gone
 set /a tries+=1
 if %tries% geq 900 goto gone
 "%SystemRoot%\System32\ping.exe" -n 2 127.0.0.1 >nul
 goto wait
 :gone
-if "%PROXYSWITCH_EXE%"=="" goto data
-del /f /q "%PROXYSWITCH_EXE%" "%PROXYSWITCH_EXE%.old" "%PROXYSWITCH_EXE%.download" 2>nul
-for %%f in ("%PROXYSWITCH_EXE%.*.old") do del /f /q "%%~f" 2>nul
-rd "%PROXYSWITCH_DIR%" 2>nul
+if "%PROXI_EXE%"=="" goto data
+del /f /q "%PROXI_EXE%" "%PROXI_EXE%.old" "%PROXI_EXE%.download" 2>nul
+for %%f in ("%PROXI_EXE%.*.old") do del /f /q "%%~f" 2>nul
+rd "%PROXI_DIR%" 2>nul
 :data
-if not "%PROXYSWITCH_DATA1%"=="" rd /s /q "%PROXYSWITCH_DATA1%" 2>nul
-if not "%PROXYSWITCH_DATA2%"=="" rd /s /q "%PROXYSWITCH_DATA2%" 2>nul
+if not "%PROXI_DATA1%"=="" rd /s /q "%PROXI_DATA1%" 2>nul
+if not "%PROXI_DATA2%"=="" rd /s /q "%PROXI_DATA2%" 2>nul
 (goto) 2>nul & del "%~f0"
 `
 
-// start 在后台启动删除用的批处理：它等这个进程退出后再删。安装目录只删 ProxySwitch 自己的文件，目录里还有别的
+// start 在后台启动删除用的批处理：它等这个进程退出后再删。安装目录只删 Proxi 自己的文件，目录里还有别的
 // 文件时目录留着。
 func (plan removalPlan) start() error {
 	if len(plan.data) > 2 {
 		return errors.New("要删除的数据文件夹太多")
 	}
-	script, err := os.CreateTemp("", "proxyswitch-uninstall-*.cmd")
+	script, err := os.CreateTemp("", "proxi-uninstall-*.cmd")
 	if err != nil {
 		return err
 	}
@@ -294,12 +295,12 @@ func (plan removalPlan) start() error {
 	if waitFor == 0 {
 		waitFor = os.Getpid()
 	}
-	environment := append(os.Environ(), "PROXYSWITCH_PID="+strconv.Itoa(waitFor), "PROXYSWITCH_EXE="+plan.executable)
+	environment := append(os.Environ(), "PROXI_PID="+strconv.Itoa(waitFor), "PROXI_EXE="+plan.executable)
 	if plan.executable != "" {
-		environment = append(environment, "PROXYSWITCH_DIR="+filepath.Dir(plan.executable))
+		environment = append(environment, "PROXI_DIR="+filepath.Dir(plan.executable))
 	}
 	for index, folder := range plan.data {
-		environment = append(environment, fmt.Sprintf("PROXYSWITCH_DATA%d=%s", index+1, folder))
+		environment = append(environment, fmt.Sprintf("PROXI_DATA%d=%s", index+1, folder))
 	}
 	command := exec.Command(filepath.Join(systemDir(), "cmd.exe"), "/d", "/c", script.Name())
 	command.Env = environment

@@ -22,7 +22,7 @@ import (
 
 // 两个地址都是变量，测试版本可以用 -ldflags -X 把它们指到本地的模拟服务。
 var (
-	releaseApiUrl = "https://api.github.com/repos/whrss9527/proxyswitch/releases/latest"
+	releaseApiUrl = "https://api.github.com/repos/whrss9527/proxi-windows/releases/latest"
 	// releasePageUrl 是最新发布的网页，GitHub 会把它跳转到 /releases/tag/<标签>。接口拒绝访问时从这里找最新版本：
 	// 接口对未登录的访问每个 IP 每小时只允许 60 次，公司网络、代理服务器的出口 IP 很多人共用，很容易超过。
 	releasePageUrl = repositoryUrl + "/releases/latest"
@@ -62,9 +62,9 @@ type InstallProgress struct {
 // updateAssetName 是发布里给某个架构用的 exe 文件名，与 Makefile 和发布流程一致。
 func updateAssetName(arch string) string {
 	if arch == "arm64" {
-		return "ProxySwitch-arm64.exe"
+		return "Proxi-arm64.exe"
 	}
-	return "ProxySwitch.exe"
+	return "Proxi.exe"
 }
 
 // updateClient 返回访问 GitHub 用的 HTTP 客户端；proxyUrl 不为空时经这个代理访问。

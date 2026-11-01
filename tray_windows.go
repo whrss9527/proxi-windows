@@ -15,7 +15,7 @@ import (
 // 其他 goroutine 通过 RunOnUi 把函数排队到这个线程。
 
 const (
-	trayWindowClass = "ProxySwitchTrayWindow"
+	trayWindowClass = legacyTrayWindowClass
 	trayIconId      = 1
 
 	balloonTimerId = 1

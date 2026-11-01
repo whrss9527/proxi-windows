@@ -1,13 +1,16 @@
-<p align="center"><img src="docs/logo.png" width="96" alt="ProxySwitch"></p>
+<p align="center"><img src="docs/logo.png" width="96" alt="Proxi"></p>
 
-<h1 align="center">ProxySwitch</h1>
+<h1 align="center">Proxi</h1>
 
 <p align="center">常驻任务栏托盘的 Windows 代理工具：单击打开设置，右键切换配置，按所在网络自动切换；填上机场订阅就能直接选节点上网。</p>
+
+<p align="center">Windows 版 · <a href="https://github.com/whrss9527/proxi">macOS 版 Proxi</a> · <a href="docs/brand-migration.md">旧版升级说明</a></p>
 
 ![设置界面](docs/screenshot-light.webp)
 
 ## 功能
 
+- **悬浮网速按钮**：左侧是 Proxi 与连接状态，右侧是总下载、上传速度；单击设置、拖动移动、右键快捷菜单，位置自动记住。到「常规」或托盘菜单开启，也可以随时关闭。
 - **快速操作**：单击托盘图标打开设置，在页面或右键菜单里开关代理，也可以按全局快捷键（默认 `Ctrl+Alt+P`）。固定的应用标识加状态角标显示开关和当前配置颜色，也可以在设置里选择开关样式。
 - **多套配置**：右键托盘图标切换配置，也可以用 `Ctrl+Alt+数字` 直接切到第几个配置。
 - **机场订阅**：填上订阅地址就能用机场的节点，不需要再装 Clash 之类的代理软件。在设置窗口或托盘菜单里选节点、测速，也可以自动选延迟最低的；按规则分流或全局代理随时切换。分流规则由一个个规则集组成，从规则库一键添加国内直连、去广告、Netflix、OpenAI 这些常用规则，也能用小火箭（Shadowrocket）、Surge 的完整配置和 Clash 的规则列表，每个规则集单独选走节点、直连、拦截或某个策略组；还可以用自定义规则让某个网站或程序固定走节点、直连或拦截；可以建「流媒体」「Telegram」这样的策略组给某类流量单独选节点（手动选择、自动选择、故障转移、负载均衡）；显示剩余流量和到期时间，每天自动更新订阅和规则。
@@ -30,23 +33,23 @@
 - **好看好用的设置界面**：独立窗口，跟随系统的深浅色、强调色和高对比度主题，改动立即生效，不需要懂配置文件。点击托盘通知直接打开相关的设置页。
 - **通知带按钮**：发现新版本时在通知上「立即更新」，代理服务器连不上时「关闭代理」，订阅下载好了「开启」；带按钮的通知留在通知中心，过后还能点。
 - **一键更新**：每天检查一次新版本（可以关闭），也可以随时从托盘菜单检查；有新版本时一键下载、校验并重新启动。
-- **安装和卸载**：安装包不需要管理员权限，开始菜单里有入口；在「设置 → 应用」里卸载时，会先关闭 ProxySwitch 开启的代理，取消开机自启和网页链接的登记，不会留下连不上网的代理设置。
-- **命令行和链接**：`ProxySwitch.exe on / off / use 配置名`，或者 `proxyswitch://toggle` 这样的链接；托盘程序在运行时命令交给它执行，图标立即更新。机场网站的「一键导入 Clash」直接打开 ProxySwitch 添加订阅。
+- **安装和卸载**：安装包不需要管理员权限，开始菜单里有入口；在「设置 → 应用」里卸载时，会先关闭 Proxi 开启的代理，取消开机自启和网页链接的登记，不会留下连不上网的代理设置。
+- **命令行和链接**：`Proxi.exe on / off / use 配置名`，或者 `proxi://toggle` 这样的链接；托盘程序在运行时命令交给它执行，图标立即更新。机场网站的「一键导入 Clash」直接打开 Proxi 添加订阅。
 - 单个 exe，纯 Go 编写，没有第三方依赖，不需要管理员权限，不收集任何数据。提供 x64 和 ARM64 两个版本。使用机场订阅时另外下载一次代理内核，见[机场订阅](#机场订阅)。
 
 ## 安装
 
-从 [Releases](https://github.com/whrss9527/proxyswitch/releases) 下载：
+从 [Releases](https://github.com/whrss9527/proxi-windows/releases) 下载：
 
 | 文件 | 适用 |
 | --- | --- |
-| `ProxySwitch-Setup.exe` | 安装包，推荐。自动选择 x64 或 ARM64 版本，装到 `%LOCALAPPDATA%\Programs\ProxySwitch`，不需要管理员权限；开始菜单里有 ProxySwitch，可以在「设置 → 应用」里卸载 |
-| `ProxySwitch.exe` | 不安装，放到任意文件夹后双击运行（Intel / AMD 处理器）；也适合放在 U 盘里用，见[便携模式](#配置文件) |
-| `ProxySwitch-arm64.exe` | 同上，骁龙等 ARM 处理器的 Windows 电脑 |
+| `Proxi-Setup.exe` | 安装包，推荐。自动选择 x64 或 ARM64 版本，装到 `%LOCALAPPDATA%\Programs\Proxi`，不需要管理员权限；开始菜单里有 Proxi，可以在「设置 → 应用」里卸载 |
+| `Proxi.exe` | 不安装，放到任意文件夹后双击运行（Intel / AMD 处理器）；也适合放在 U 盘里用，见[便携模式](#配置文件) |
+| `Proxi-arm64.exe` | 同上，骁龙等 ARM 处理器的 Windows 电脑 |
 
 运行后任务栏右下角会出现托盘图标。支持 Windows 10 和 Windows 11。
 
-已经在用单独的 exe 的，也可以直接运行安装包：正在运行的 ProxySwitch 会先退出，配置和订阅都会保留（便携模式除外），开机自启和网页链接会改到安装的位置，原来的 exe 之后可以删掉。
+已经在用单独的 exe 的，也可以直接运行安装包：正在运行的 Proxi 会先退出，配置和订阅都会保留（便携模式除外），开机自启和网页链接会改到安装的位置，原来的 exe 之后可以删掉。
 
 没有数字签名的版本第一次运行时，Windows 可能提示「Windows 已保护你的电脑」，点「更多信息」→「仍要运行」即可。数字签名见[代码签名](#代码签名)。
 
@@ -68,7 +71,7 @@
 - **单击**托盘图标：打开设置。
 - **右键**托盘图标：切换配置、测试连接、网址诊断、复制终端代理命令、按网络自动切换、局域网共享、打开设置、开机自动启动、检查更新、退出。订阅配置有子菜单，可以选节点、全部测速、更新订阅。
 - 点击通知会打开相关的设置页，例如自动切换的通知打开「自动切换」页。有的通知带按钮，例如发现新版本时的「立即更新」、代理服务器连不上时的「关闭代理」。
-- 再次双击 `ProxySwitch.exe` 会打开设置窗口，不会重复启动。
+- 再次双击 `Proxi.exe` 会打开设置窗口，不会重复启动。
 
 单击、双击托盘图标分别做什么可以在「设置 → 常规」里修改。
 
@@ -104,7 +107,7 @@
 
 本机和局域网地址无论怎么选都直接连接。在托盘菜单的订阅子菜单、节点对话框或配置的「更多」菜单里都能切换按规则分流和全局代理。
 
-**第一次使用**时要下载代理内核。ProxySwitch 用 [mihomo](https://github.com/MetaCubeX/mihomo)（Clash.Meta）内核连接节点，设置窗口会提示「下载内核」，约 20 MB，只需下载一次。下载的是 mihomo 官方发布的固定版本，按写在 ProxySwitch 里的 SHA-256 校验后才使用。内置的国内直连（以及用到 GEOIP、GEOSITE 的规则）还要下载一次国内域名和 IP 的数据（约 12 MB），下载好之前这几条规则先跳过。
+**第一次使用**时要下载代理内核。Proxi 用 [mihomo](https://github.com/MetaCubeX/mihomo)（Clash.Meta）内核连接节点，设置窗口会提示「下载内核」，约 20 MB，只需下载一次。下载的是 mihomo 官方发布的固定版本，按写在 Proxi 里的 SHA-256 校验后才使用。内置的国内直连（以及用到 GEOIP、GEOSITE 的规则）还要下载一次国内域名和 IP 的数据（约 12 MB），下载好之前这几条规则先跳过。
 
 **选节点**：点订阅配置上的「节点」按钮，或者右键托盘图标，在订阅配置的子菜单里选。「自动选择」每半小时测一次速，使用延迟最低的节点；「全部测速」立即测一遍并显示每个节点的延迟。选中的节点会保存下来，下次启动继续使用。
 
@@ -125,17 +128,17 @@
 
 - 建虚拟网卡要管理员权限：内核启动时会弹出一次用户账户控制的确认框（开机自启时也会），点「否」时照常用系统代理，TUN 先不开，把 TUN 模式关掉再打开可以重新确认。内核以管理员权限运行期间开关 TUN 不用再确认。
 - DNS 用 fake-ip：分流规则按域名判断，走节点的网站由节点解析，直连的网站用国内的 DoH 解析；局域网、系统联网检测、游戏机和时间同步的域名照常返回真实地址。
-- 以管理员权限运行的只有 ProxySwitch 自己和内核：发布版会先按发布时写入的 SHA-256 校验下载的内核，不一致就不运行（配置里指定的内核不校验）。
+- 以管理员权限运行的只有 Proxi 自己和内核：发布版会先按发布时写入的 SHA-256 校验下载的内核，不一致就不运行（配置里指定的内核不校验）。
 
-ProxySwitch 在后台运行 mihomo 内核，内核在 `127.0.0.1:17890` 提供代理（HTTP 和 SOCKS5 共用这个端口）。开启订阅配置，就是把系统代理和勾选的环境变量、git、npm 指向这个端口，所以按网络自动切换、快捷键、健康检查、终端代理命令对订阅配置同样适用。端口和内核程序的位置可以在「设置 → 常规 → 代理内核」里修改。
+Proxi 在后台运行 mihomo 内核，内核在 `127.0.0.1:17890` 提供代理（HTTP 和 SOCKS5 共用这个端口）。开启订阅配置，就是把系统代理和勾选的环境变量、git、npm 指向这个端口，所以按网络自动切换、快捷键、健康检查、终端代理命令对订阅配置同样适用。端口和内核程序的位置可以在「设置 → 常规 → 代理内核」里修改。
 
 注意：
 
-- 内核由 ProxySwitch 管理，跟着它启动和退出。退出 ProxySwitch 时会关闭订阅配置的代理，否则系统代理指向的端口没有程序在听，就上不了网了；「启动时」设为「保持上次的状态」（默认）时，下次启动会自动重新开启。
+- 内核由 Proxi 管理，跟着它启动和退出。退出 Proxi 时会关闭订阅配置的代理，否则系统代理指向的端口没有程序在听，就上不了网了；「启动时」设为「保持上次的状态」（默认）时，下次启动会自动重新开启。
 - 托盘程序没有运行时，命令行不能开启订阅配置。
 - 不使用系统代理的程序（例如部分游戏）不会经过节点：打开上面的 TUN 模式，或者在这些程序里把代理设为 `127.0.0.1:17890`。
 - 暂不使用机场订阅里自带的分流规则（Clash 配置里的 `rules`），分流规则在「设置 → 分流规则」里设置。
-- 从 Clash 等软件换过来时，先别急着关掉它：内核和订阅可以经它设置的系统代理下载。用上订阅以后，把它的「系统代理」关掉或者卸载它，避免和 ProxySwitch 互相覆盖。
+- 从 Clash 等软件换过来时，先别急着关掉它：内核和订阅可以经它设置的系统代理下载。用上订阅以后，把它的「系统代理」关掉或者卸载它，避免和 Proxi 互相覆盖。
 
 ### 分流规则
 
@@ -170,7 +173,7 @@ ProxySwitch 在后台运行 mihomo 内核，内核在 `127.0.0.1:17890` 提供�
 - 去向：`PROXY` 走选中的节点，`DIRECT` 直连，`REJECT`（包括 `REJECT-TINYGIF` 等）拦截。`[Proxy Group]` 里的策略组和这里的策略组同名时走那个组，否则按它的默认选项（`policy-select-name`，没有写时是第一个选项）归为这三种之一，节点和自动测速的组都算走节点。
 - `USER-AGENT`、`URL-REGEX` 这类要解密 HTTPS 才能判断的规则，以及 `IP-ASN`、`AND` / `OR` 等内核做不到的规则会跳过（`PROCESS-NAME`、`PROCESS-PATH` 按连接来自的程序匹配），列表里能看到跳过了多少条；`[General]`、`[URL Rewrite]`、`[MITM]`、`[Host]` 等段落不使用。
 - Clash（mihomo）的配置用其中的 `rules`：`proxy-groups` 里的策略组按第一个选项归类，`RULE-SET` 引用的 `rule-providers`（domain、ipcidr、classical，yaml 或 text 格式，也支持 inline）一起下载，`GEOSITE` 规则原样交给内核；mrs 格式的 `rule-providers` 和 `PASS` 跳过（mrs 的规则列表可以直接加成规则集）。
-- 去广告的规则有几万条，ProxySwitch 会把去向相同的连续规则合并成内核的规则集，按域名前缀树匹配，不会拖慢上网。
+- 去广告的规则有几万条，Proxi 会把去向相同的连续规则合并成内核的规则集，按域名前缀树匹配，不会拖慢上网。
 
 </details>
 
@@ -209,7 +212,7 @@ ProxySwitch 在后台运行 mihomo 内核，内核在 `127.0.0.1:17890` 提供�
 
 ### 网址诊断
 
-某个网站打不开时，在「设置 → 网址诊断」里填上网址（或者右键托盘图标选「网址诊断...」），点「开始诊断」，ProxySwitch 会逐项检查：
+某个网站打不开时，在「设置 → 网址诊断」里填上网址（或者右键托盘图标选「网址诊断...」），点「开始诊断」，Proxi 会逐项检查：
 
 | 检查 | 看什么 |
 | --- | --- |
@@ -223,7 +226,7 @@ ProxySwitch 在后台运行 mihomo 内核，内核在 `127.0.0.1:17890` 提供�
 
 选「局域网设备（PS5 等）」时从局域网共享的入口走一遍，和设备走的路径完全一样，还会看「最近的连接」里设备有没有访问过这个网站：链路是通的但设备没访问过，多半是设备上的那个应用没走代理。局域网共享页「最近的连接」里每一条的「…」菜单也可以直接诊断。
 
-命令行：`ProxySwitch.exe diagnose youtube.com`（加 `--device` 从设备的视角）打开网址诊断页并立即诊断。
+命令行：`Proxi.exe diagnose youtube.com`（加 `--device` 从设备的视角）打开网址诊断页并立即诊断。
 
 ### 按网络自动切换
 
@@ -231,7 +234,7 @@ ProxySwitch 在后台运行 mihomo 内核，内核在 `127.0.0.1:17890` 提供�
 
 - 规则从上到下匹配，第一条匹配的生效；都不匹配时按「其他网络」的设置处理。
 - 只在网络变化时切换。你在某个网络里手动切换后，它不会再改回去，直到你换了网络。
-- Windows 11 24H2 起读取 Wi-Fi 名称需要打开「位置」权限。没打开时 ProxySwitch 会根据网关从系统记录的网络列表里找出 Wi-Fi 名称；也可以改用 DNS 后缀或网关作为条件，这两种不需要权限。
+- Windows 11 24H2 起读取 Wi-Fi 名称需要打开「位置」权限。没打开时 Proxi 会根据网关从系统记录的网络列表里找出 Wi-Fi 名称；也可以改用 DNS 后缀或网关作为条件，这两种不需要权限。
 - 关闭自动切换或没有使用 Wi-Fi 名称条件时，不读取 Wi-Fi 名称；只按网关、DNS 后缀或网卡切换不会因此触发位置访问。「按当前网络立即应用」遇到 Wi-Fi 条件时只读取一次，页面会提前说明。
 - 按网卡：网卡的名字或型号里包含某段文字时匹配，不区分大小写，例如 `WireGuard`、`Tailscale`、`AnyConnect`。连上 VPN 时切换（比如关掉代理、让 VPN 自己管路由），断开后按其他规则处理。「当前网络」里列出了其他已连接的网卡，点一下就能按它添加规则；WSL、Hyper-V 这些虚拟网卡出现或消失不算网络变化，TUN 模式自己的虚拟网卡不算在内。
 
@@ -239,7 +242,7 @@ ProxySwitch 在后台运行 mihomo 内核，内核在 `127.0.0.1:17890` 提供�
 
 ### 配置同步（多台电脑）
 
-家里和公司各有一台电脑时，在「设置 → 配置同步」里打开同步，两台电脑选同一个会同步的文件夹：默认是 OneDrive 里的 `ProxySwitch` 文件夹，也可以填坚果云、Dropbox、NAS 共享里的文件夹。之后一台电脑上的改动几秒内同步到另一台（文件夹由 OneDrive 这类程序在电脑之间传，快慢取决于它）。
+家里和公司各有一台电脑时，在「设置 → 配置同步」里打开同步，两台电脑选同一个会同步的文件夹：默认是 OneDrive 里的 `Proxi` 文件夹，也可以填坚果云、Dropbox、NAS 共享里的文件夹。之后一台电脑上的改动几秒内同步到另一台（文件夹由 OneDrive 这类程序在电脑之间传，快慢取决于它）。
 
 - 同步的是代理配置（包括订阅地址和选中的节点）、策略组、自定义规则、规则集、其余流量的去向、自动切换规则，以及快捷键、托盘、通知这些常规设置。
 - 不同步的是每台电脑各自的：代理内核的位置和端口、TUN 模式、局域网共享、编辑器。订阅的节点和规则集由每台电脑自己下载，订阅配置的代理地址跟着本机内核的端口走。
@@ -269,34 +272,34 @@ Git Bash 的命令也能用在 WSL 里。注意 WSL 2 默认的网络模式下 `
 ### 命令行
 
 ```
-ProxySwitch.exe on              开启代理（上次使用的配置）
-ProxySwitch.exe off             关闭代理
-ProxySwitch.exe toggle          开 / 关切换
-ProxySwitch.exe use 公司代理     切换到指定配置并开启
-ProxySwitch.exe share on        开启局域网共享（off 关闭，不写表示切换）
-ProxySwitch.exe diagnose 网址    网址诊断（加 --device 从局域网设备的视角）
-ProxySwitch.exe status          查看状态（退出码 0 表示已开启，1 表示已关闭）
-ProxySwitch.exe settings        打开设置
-ProxySwitch.exe update          检查更新（打开「关于」页并立即检查）
-ProxySwitch.exe uninstall       卸载（安装版同时删除程序；加 --quiet 不询问，保留配置）
+Proxi.exe on              开启代理（上次使用的配置）
+Proxi.exe off             关闭代理
+Proxi.exe toggle          开 / 关切换
+Proxi.exe use 公司代理     切换到指定配置并开启
+Proxi.exe share on        开启局域网共享（off 关闭，不写表示切换）
+Proxi.exe diagnose 网址    网址诊断（加 --device 从局域网设备的视角）
+Proxi.exe status          查看状态（退出码 0 表示已开启，1 表示已关闭）
+Proxi.exe settings        打开设置
+Proxi.exe update          检查更新（打开「关于」页并立即检查）
+Proxi.exe uninstall       卸载（安装版同时删除程序；加 --quiet 不询问，保留配置）
 ```
 
 托盘程序在运行时，命令交给它执行；没有运行时直接修改设置后退出。可以用在脚本、计划任务或桌面快捷方式里。
 
 ### 网页链接和一键导入
 
-ProxySwitch 登记了 `proxyswitch://` 链接，在浏览器里点链接、在「运行」里输入、或在脚本里 `start proxyswitch://toggle` 都能操作它（和 macOS 版的链接相同）：
+Proxi 登记了 `proxi://` 链接，在浏览器里点链接、在「运行」里输入、或在脚本里 `start proxi://toggle` 都能操作它（和 macOS 版的链接相同）：
 
 ```
-proxyswitch://on、off、toggle          开启、关闭、开 / 关切换
-proxyswitch://use?name=公司代理          切换到指定配置并开启
-proxyswitch://share/on                 开启局域网共享（/off 关闭，不写表示切换）
-proxyswitch://settings?page=about      打开设置的某一页
-proxyswitch://update                   检查更新
-proxyswitch://diagnose?url=网址         网址诊断（加 &from=device 从局域网设备的视角）
+proxi://on、off、toggle          开启、关闭、开 / 关切换
+proxi://use?name=公司代理          切换到指定配置并开启
+proxi://share/on                 开启局域网共享（/off 关闭，不写表示切换）
+proxi://settings?page=about      打开设置的某一页
+proxi://update                   检查更新
+proxi://diagnose?url=网址         网址诊断（加 &from=device 从局域网设备的视角）
 ```
 
-机场网站上的「一键导入 Clash」按钮用的是 `clash://install-config?url=订阅地址` 链接。没有其他程序处理这种链接时由 ProxySwitch 处理：点按钮会打开添加订阅的对话框，填好地址并检查，确认后保存即可。已经装了 Clash Verge 等软件时不会抢，可以在「设置 → 系统集成」里点「改由 ProxySwitch 处理」，关闭「网页链接」时交还给原来的程序。
+机场网站上的「一键导入 Clash」按钮用的是 `clash://install-config?url=订阅地址` 链接。没有其他程序处理这种链接时由 Proxi 处理：点按钮会打开添加订阅的对话框，填好地址并检查，确认后保存即可。已经装了 Clash Verge 等软件时不会抢，可以在「设置 → 系统集成」里点「改由 Proxi 处理」，关闭「网页链接」时交还给原来的程序。
 
 链接登记在当前用户的注册表里（`HKEY_CURRENT_USER\Software\Classes`），不需要管理员权限；关闭「网页链接」会删除登记。
 
@@ -310,7 +313,7 @@ proxyswitch://diagnose?url=网址         网址诊断（加 &from=device 从局
 
 GitHub 的接口对未登录的访问限制了次数（每个 IP 每小时 60 次），公司网络、代理服务器的出口 IP 很多人共用，容易超过。这时改从发布页查找新版本，同样可以一键更新，只是看不到更新说明，可以点「查看发布页」。
 
-1.x 版本还没有程序内更新，从 1.x 升级时到 [Releases](https://github.com/whrss9527/proxyswitch/releases) 下载新版本替换一次 exe 即可，原来的配置文件可以直接使用。
+1.x 版本还没有程序内更新，从 1.x 升级时到 [Releases](https://github.com/whrss9527/proxi-windows/releases) 下载新版本替换一次 exe 即可，原来的配置文件可以直接使用。
 
 ## 外观、深色模式和高对比度
 
@@ -326,7 +329,7 @@ GitHub 的接口对未登录的访问限制了次数（每个 IP 每小时 60 �
 
 | 模式 | 位置 |
 | --- | --- |
-| 安装模式（默认） | `%APPDATA%\ProxySwitch\`：配置 `config.jsonc`、运行状态 `state.json`、流量统计 `traffic.json`、日志 `proxyswitch.log`、崩溃记录 `crash.log`；`core` 文件夹里是代理内核、下载的订阅和分流规则、内核的日志 `core.log`。开了[配置同步](#配置同步多台电脑)时，同步文件夹里还有一份 `config.json` |
+| 安装模式（默认） | `%APPDATA%\Proxi\`：配置 `config.jsonc`、运行状态 `state.json`、流量统计 `traffic.json`、日志 `proxi.log`、崩溃记录 `crash.log`；`core` 文件夹里是代理内核、下载的订阅和分流规则、内核的日志 `core.log`。开了[配置同步](#配置同步多台电脑)时，同步文件夹里还有一份 `config.json` |
 | 便携模式 | exe 所在的文件夹。只要 exe 旁边有 `config.jsonc`，所有文件都放在这里，适合放在 U 盘里用 |
 
 配置文件是 JSON，允许 `//` 注释和末尾多余的逗号。第一次运行生成的文件里每一项都有注释说明。
@@ -353,7 +356,7 @@ GitHub 的接口对未登录的访问限制了次数（每个 IP 每小时 60 �
 | `editor` | 程序名 | 编辑配置文件用的编辑器，留空用记事本 |
 | `check_updates` | `true` / `false` | 每天自动检查一次新版本 |
 | `speed_display` | `system` / `core` / `none` | 实时网速：系统网络总速度 / 只算内置代理 / 不显示 |
-| `url_links` | `true` / `false` | 登记 `proxyswitch://` 链接和机场网站的一键导入（`clash://`，没有其他程序处理时） |
+| `url_links` | `true` / `false` | 登记 `proxi://` 链接和机场网站的一键导入（`clash://`，没有其他程序处理时） |
 | `pause_on_metered` | `true` / `false` | 按流量计费的网络（手机热点、设成按流量计费的 Wi-Fi 等）上暂停每天自动更新订阅和分流规则，手动更新不受影响；换到其他网络后马上补上。默认开启 |
 | `core` | 见下 | 订阅使用的代理内核 |
 | `tun` | `{"enabled": true / false}` | TUN 模式：开着订阅配置时接管全部流量，内核要以管理员权限运行 |
@@ -362,7 +365,7 @@ GitHub 的接口对未登录的访问限制了次数（每个 IP 每小时 60 �
 | `rule_sets` | 见下 | 规则集，按顺序匹配 |
 | `final_policy` | 留空 / `proxy` / `direct` / `reject` / `group:组名` | 其余流量的去向，留空跟随规则文件（没有就走节点） |
 | `share` | 见下 | 局域网共享 |
-| `sync` | `{"enabled": true / false, "folder": "…"}` | 配置同步：`folder` 是同步文件夹的完整路径，留空时用 OneDrive 里的 `ProxySwitch` 文件夹 |
+| `sync` | `{"enabled": true / false, "folder": "…"}` | 配置同步：`folder` 是同步文件夹的完整路径，留空时用 OneDrive 里的 `Proxi` 文件夹 |
 | `auto_switch` | 见下 | 按网络自动切换 |
 | `profiles` | 见下 | 代理配置，托盘菜单按这个顺序显示 |
 
@@ -393,14 +396,14 @@ GitHub 的接口对未登录的访问限制了次数（每个 IP 每小时 60 �
 
 | 字段 | 说明 |
 | --- | --- |
-| `path` | mihomo 程序的位置，留空使用 ProxySwitch 下载的内核 |
+| `path` | mihomo 程序的位置，留空使用 Proxi 下载的内核 |
 | `port` | 内核在本机提供代理的端口，默认 `17890`，HTTP 和 SOCKS5 共用 |
 
 `policy_groups` 里每个策略组：
 
 | 字段 | 说明 |
 | --- | --- |
-| `name` | 名字，最多 20 个字，不能重复，不能有逗号、引号，也不能用 `DIRECT`、`REJECT`、`ProxySwitch` 这类内核保留的名字 |
+| `name` | 名字，最多 20 个字，不能重复，不能有逗号、引号，也不能用 `DIRECT`、`REJECT`、`Proxi` 这类内核保留的名字 |
 | `type` | `select` 手动选择 / `url-test` 自动选择延迟最低的 / `fallback` 故障转移 / `load-balance` 负载均衡 |
 | `filter` | 节点名的正则表达式，默认不区分大小写（以 `(?` 开头时按自己写的标志），留空为全部节点；支持 `(?!…)` 这类环视 |
 | `node` | 手动选择的组选中的：留空跟随节点，`自动选择`、`DIRECT`（直连）或节点名 |
@@ -450,25 +453,25 @@ GitHub 的接口对未登录的访问限制了次数（每个 IP 每小时 60 �
 商店应用默认不能连本机的 127.0.0.1，系统代理指向本机的代理时就连不上。在「设置 → 系统集成 → 微软商店应用」里点「全部允许」，或者「选择应用…」只勾选需要的，确认管理员权限后重新打开这些应用即可（和 `CheckNetIsolation LoopbackExempt` 的效果相同，其他工具加过的也会保留）。
 
 **WSL 里用不了代理？**
-WSL 2 默认的 NAT 网络下，WSL 里的 `127.0.0.1` 指的是 WSL 自己，连不到 Windows 上的代理，WSL 启动时还会提示「检测到 localhost 代理配置，但未镜像到 WSL」。Windows 11 22H2 起，在「设置 → 系统集成 → WSL」里点「一键设置」再点「重启 WSL」即可：ProxySwitch 在用户目录的 `.wslconfig` 里写入 `networkingMode=mirrored`（镜像网络，WSL 和 Windows 共用网络，`127.0.0.1` 就是 Windows 本机）和 `autoProxy=true`（WSL 启动时自动使用 Windows 的代理设置，设置 `http_proxy` 等环境变量），其他设置原样保留。重启 WSL 等于 `wsl --shutdown`，会关闭 WSL 里正在运行的程序。WSL 只在启动时读取 Windows 的代理设置，之后开关代理或换了配置，要在那里再点一次「重启 WSL」；遇到镜像网络的兼容问题时点「撤销」恢复默认的网络。更早的 Windows 不支持镜像网络，可以打开局域网共享，在 WSL 里运行页面上给出的命令，经 Windows 的 IP 连共享端口。
+WSL 2 默认的 NAT 网络下，WSL 里的 `127.0.0.1` 指的是 WSL 自己，连不到 Windows 上的代理，WSL 启动时还会提示「检测到 localhost 代理配置，但未镜像到 WSL」。Windows 11 22H2 起，在「设置 → 系统集成 → WSL」里点「一键设置」再点「重启 WSL」即可：Proxi 在用户目录的 `.wslconfig` 里写入 `networkingMode=mirrored`（镜像网络，WSL 和 Windows 共用网络，`127.0.0.1` 就是 Windows 本机）和 `autoProxy=true`（WSL 启动时自动使用 Windows 的代理设置，设置 `http_proxy` 等环境变量），其他设置原样保留。重启 WSL 等于 `wsl --shutdown`，会关闭 WSL 里正在运行的程序。WSL 只在启动时读取 Windows 的代理设置，之后开关代理或换了配置，要在那里再点一次「重启 WSL」；遇到镜像网络的兼容问题时点「撤销」恢复默认的网络。更早的 Windows 不支持镜像网络，可以打开局域网共享，在 WSL 里运行页面上给出的命令，经 Windows 的 IP 连共享端口。
 
 **Windows 更新、Microsoft Store 下载不走代理？**
-这些系统服务不看系统代理，用的是整台电脑的 WinHTTP 代理（`netsh winhttp show proxy`）。代理开启时，在「设置 → 系统集成 → 系统服务」里点「设为当前代理」，确认管理员权限即可；不需要时点「改回直连」。WinHTTP 只支持 HTTP 代理，SOCKS 和 PAC 配置不能用。它不跟随代理的开关：设成订阅配置的内置内核时，ProxySwitch 运行期间一直可用，从托盘菜单退出时如果还没改回会提醒；设成其他代理软件时，那个软件要一直开着。「设置 → 诊断」里能看到现在的 WinHTTP 代理。
+这些系统服务不看系统代理，用的是整台电脑的 WinHTTP 代理（`netsh winhttp show proxy`）。代理开启时，在「设置 → 系统集成 → 系统服务」里点「设为当前代理」，确认管理员权限即可；不需要时点「改回直连」。WinHTTP 只支持 HTTP 代理，SOCKS 和 PAC 配置不能用。它不跟随代理的开关：设成订阅配置的内置内核时，Proxi 运行期间一直可用，从托盘菜单退出时如果还没改回会提醒；设成其他代理软件时，那个软件要一直开着。「设置 → 诊断」里能看到现在的 WinHTTP 代理。
 
 **公司电脑上改了没效果？**
-管理员可能通过组策略把代理设置锁定为按计算机统一设置，这时当前用户的设置不会生效。ProxySwitch 写入后会读回确认，出现这种情况会提示，「设置 → 诊断」里也能看到。
+管理员可能通过组策略把代理设置锁定为按计算机统一设置，这时当前用户的设置不会生效。Proxi 写入后会读回确认，出现这种情况会提示，「设置 → 诊断」里也能看到。
 
 **连着 VPN 时代理不生效？**
-Windows 的拨号和 VPN 连接各有一份代理设置。ProxySwitch 开关代理时会同时设置它们，新建 VPN 连接后重新开关一次即可。
+Windows 的拨号和 VPN 连接各有一份代理设置。Proxi 开关代理时会同时设置它们，新建 VPN 连接后重新开关一次即可。
 
 **其他代理软件也在管系统代理？**
-两边会互相覆盖。建议在那些软件里关闭「自动设置系统代理」，只用 ProxySwitch 开关。ProxySwitch 发现系统代理被其他程序改掉时，托盘图标会变成橙色；在「设置 → 常规 → 连接」里打开「守护系统代理」，代理开启期间被改掉会自动改回，十分钟里被改掉三次以上说明有程序在抢，会停下来提示，关掉那个程序的设置后重新开启一次代理即可。
+两边会互相覆盖。建议在那些软件里关闭「自动设置系统代理」，只用 Proxi 开关。Proxi 发现系统代理被其他程序改掉时，托盘图标会变成橙色；在「设置 → 常规 → 连接」里打开「守护系统代理」，代理开启期间被改掉会自动改回，十分钟里被改掉三次以上说明有程序在抢，会停下来提示，关掉那个程序的设置后重新开启一次代理即可。
 
 **上不了网，也不知道是哪里的代理设置在起作用？**
 打开「设置 → 诊断」，可以看到系统代理、环境变量、git、npm 的当前设置；「清除所有代理设置」会把它们全部恢复为直接连接。
 
 **没有弹出通知？**
-Windows 的「专注助手 / 免打扰」会拦截通知。通知的显示范围和时长在「设置 → 常规 → 通知」里修改。ProxySwitch 的通知是 Windows 的系统通知，在「Windows 设置 → 系统 → 通知」的「ProxySwitch」里可以单独开关；点通知和按钮靠 `proxyswitch://` 链接，所以关闭「网页链接」后改用托盘气泡（没有按钮）。
+Windows 的「专注助手 / 免打扰」会拦截通知。通知的显示范围和时长在「设置 → 常规 → 通知」里修改。Proxi 的通知是 Windows 的系统通知，在「Windows 设置 → 系统 → 通知」的「Proxi」里可以单独开关；点通知和按钮靠 `proxi://` 链接，所以关闭「网页链接」后改用托盘气泡（没有按钮）。
 
 **被杀毒软件误报？**
 Go 编写的小工具偶尔会被误报。可以核对 Release 附带的 SHA256SUMS.txt，或者自己从源码编译；有数字签名的版本（见[代码签名](#代码签名)）误报会少很多。
@@ -477,7 +480,7 @@ Go 编写的小工具偶尔会被误报。可以核对 Release 附带的 SHA256S
 只在测速（访问测速地址）和检查更新（访问 GitHub）时联网，不收集任何数据。代理开启时这些请求经代理发出。自动检查更新可以在「设置 → 关于」里关闭。使用机场订阅时还会下载订阅和启用的规则集（每天一次）、代理内核（GitHub，只下载一次）和国内直连用的数据（jsDelivr 或 GitHub，只下载一次）。打开「设置 → 连接」时会经 ip.sb、ipinfo.io、ipapi.co 查出口 IP。
 
 **代理内核下载不下来？**
-内核从 GitHub 下载，国内直接连接常常很慢。有代理时 ProxySwitch 先经代理下载：正在使用的配置，或者原来的代理软件（例如 Clash）设置的系统代理都可以，所以换过来时先别急着关掉原来的软件。也可以自己从 [mihomo 的发布页](https://github.com/MetaCubeX/mihomo/releases) 下载 `mihomo-windows-amd64-v1-版本号.zip`（ARM 电脑下载 `arm64` 的），解压后在「设置 → 常规 → 代理内核」里填程序的位置。
+内核从 GitHub 下载，国内直接连接常常很慢。有代理时 Proxi 先经代理下载：正在使用的配置，或者原来的代理软件（例如 Clash）设置的系统代理都可以，所以换过来时先别急着关掉原来的软件。也可以自己从 [mihomo 的发布页](https://github.com/MetaCubeX/mihomo/releases) 下载 `mihomo-windows-amd64-v1-版本号.zip`（ARM 电脑下载 `arm64` 的），解压后在「设置 → 常规 → 代理内核」里填程序的位置。
 
 **订阅配置提示端口被占用？**
 内核默认使用 `17890` 端口，被其他程序占用时在「设置 → 常规 → 代理内核」里换一个端口。局域网共享的端口（默认 `17892`）在共享页里修改。
@@ -492,19 +495,19 @@ Go 编写的小工具偶尔会被误报。可以核对 Release 附带的 SHA256S
 崩溃时的信息会记录下来，下次启动时托盘会提示，「设置 → 诊断」里能看到记录。反馈问题时附上「复制诊断信息」的内容会更快解决。
 
 **怎么卸载？**
-用安装包装的，在「设置 → 应用」里找到 ProxySwitch 点「卸载」；单独的 exe 运行一次 `ProxySwitch.exe uninstall`，再删掉 exe。卸载会先让 ProxySwitch 退出、关闭它开启的代理（恢复开启前的设置），取消开机自启、网页链接和通知的登记；WinHTTP 还指向内置内核时会问要不要改回直连；最后问要不要删除配置和订阅（`%APPDATA%\ProxySwitch`）以及设置窗口的浏览器数据（`%LOCALAPPDATA%\ProxySwitch`）。设置过 WSL 的，卸载前在「设置 → 系统集成」里点「撤销」；允许过商店应用走代理、添加过防火墙例外的，留着也没有影响。便携模式的配置在 exe 旁边，连同文件夹一起删掉即可。
+用安装包装的，在「设置 → 应用」里找到 Proxi 点「卸载」；单独的 exe 运行一次 `Proxi.exe uninstall`，再删掉 exe。卸载会先让 Proxi 退出、关闭它开启的代理（恢复开启前的设置），取消开机自启、网页链接和通知的登记；WinHTTP 还指向内置内核时会问要不要改回直连；最后问要不要删除配置和订阅（`%APPDATA%\Proxi`）以及设置窗口的浏览器数据（`%LOCALAPPDATA%\Proxi`）。设置过 WSL 的，卸载前在「设置 → 系统集成」里点「撤销」；允许过商店应用走代理、添加过防火墙例外的，留着也没有影响。便携模式的配置在 exe 旁边，连同文件夹一起删掉即可。
 
 ## macOS 版
 
-macOS 的原生菜单栏版本在另一个仓库：[proxyswitch-mac](https://github.com/whrss9527/proxyswitch-mac)。它用 Swift 写成，功能各自演进，不共享代码。
+macOS 的原生菜单栏版本在另一个仓库：[proxi-mac](https://github.com/whrss9527/proxi-windows-mac)。它用 Swift 写成，功能各自演进，不共享代码。
 
 ## 开发
 
 需要 Go 1.23 或更新版本，不需要 CGO。在 Linux / macOS 上交叉编译：
 
 ```bash
-make              # 编译 dist/ProxySwitch.exe 和 dist/ProxySwitch-arm64.exe
-make installer    # 把这两个 exe 打成安装包 dist/ProxySwitch-Setup.exe（需要 NSIS 的 makensis）
+make              # 编译 dist/Proxi.exe 和 dist/Proxi-arm64.exe
+make installer    # 把这两个 exe 打成安装包 dist/Proxi-Setup.exe（需要 NSIS 的 makensis）
 make test         # 静态检查（含 Windows 平台）和单元测试
 make dev          # 在本机预览设置界面，系统设置用内存模拟，带假的代理和测速地址
 make dev CORE=/path/to/mihomo   # 同上，用本机的 mihomo 试用机场订阅
@@ -513,12 +516,12 @@ make ui-test      # 设置界面的浏览器自动化测试（需要 Python Play
 
 设置界面的字体是思源黑体（Noto Sans SC）的子集，包括界面和程序提示里用到的全部汉字和 3755 个常用字。改了界面文字、用到了子集里没有的字时，CI 里的 `python3 tools/subset_font.py --check` 会报出来，运行 `python3 tools/subset_font.py`（需要 `pip install fonttools brotli`）重新生成即可。
 
-订阅和代理内核的测试需要真实的 mihomo，设置 `PROXYSWITCH_CORE` 为它的路径才会运行，例如 `PROXYSWITCH_CORE=/path/to/mihomo make test`；CI 会下载 `core_config.go` 里固定版本的官方内核来跑。
+订阅和代理内核的测试需要真实的 mihomo，设置 `PROXI_CORE` 为它的路径才会运行，例如 `PROXI_CORE=/path/to/mihomo make test`；CI 会下载 `core_config.go` 里固定版本的官方内核来跑。
 
 在 Windows 上编译：
 
 ```bat
-go build -trimpath -ldflags="-H windowsgui -s -w" -o ProxySwitch.exe .
+go build -trimpath -ldflags="-H windowsgui -s -w" -o Proxi.exe .
 ```
 
 代码结构：
@@ -537,9 +540,9 @@ go build -trimpath -ldflags="-H windowsgui -s -w" -o ProxySwitch.exe .
 | `core.go` `core_config.go` `coreinstall.go` `engine_core.go` | 代理内核（mihomo）：生成配置、启动和监控进程、通过它的接口选节点和测速；下载并校验内核；与引擎的衔接 |
 | `terminal.go` | 在当前终端设置代理的命令 |
 | `settings.go` `web/` | 设置界面的本地服务和页面；`web/NotoSansSC-subset.woff2` 是界面字体，由 `tools/subset_font.py` 生成 |
-| `*_windows.go` | Windows 实现：系统代理（WinINET）、PAC 执行（WinHTTP）、托盘、菜单、通知（系统通知用 WinRT 的 ToastNotificationManager）、快捷键、网络信息、监听端口、替换程序完成更新、内核进程随 ProxySwitch 退出（作业对象） |
+| `*_windows.go` | Windows 实现：系统代理（WinINET）、PAC 执行（WinHTTP）、托盘、菜单、通知（系统通知用 WinRT 的 ToastNotificationManager）、快捷键、网络信息、监听端口、替换程序完成更新、内核进程随 Proxi 退出（作业对象） |
 | `settings_dev.go` `dev_fakes.go` `memorysystem.go` | 开发模式和测试用的内存实现、假代理 |
-| `installer/ProxySwitch.nsi` `install_windows.go` | 安装包（NSIS）；安装版的卸载项和 `--uninstall` 的清理。`tools/installer_test.ps1` 在 Windows 上把安装、覆盖安装和卸载走一遍 |
+| `installer/Proxi.nsi` `install_windows.go` | 安装包（NSIS）；安装版的卸载项和 `--uninstall` 的清理。`tools/installer_test.ps1` 在 Windows 上把安装、覆盖安装和卸载走一遍 |
 
 推送代码时 GitHub Actions 会在 Linux 上跑单元测试和界面测试，在 Windows 上跑包括读写系统代理在内的全部测试，并把安装包真的安装、覆盖安装和卸载一遍。本仓库分支开的合并请求全部通过后自动合并；CHANGELOG.md 最上面的版本还没有标签时，接着在 main 上运行 release 工作流：打标签、编译 exe 和安装包、签名（配置了 SignPath 时）并发布 Release。也可以在 Actions 页面手动运行 release，在 main 上填新的版本号（例如 `v2.1.0`）时先在 main 的最新提交上打这个标签再发布，填已有的标签则重新上传附件。发布时下载固定版本的官方内核，把它的 SHA-256 写进程序（`make core-sha256` 可以在本地算出这两个值），程序里下载内核时按它校验。
 
@@ -550,13 +553,13 @@ Windows 版的程序和安装包使用 [SignPath.io](https://signpath.io) 提供
 - 发布的程序全部由 GitHub Actions 从这个仓库的源码编译（`.github/workflows/release.yml`），编译后交给 SignPath 签名，不经过任何个人的电脑。
 - 提交和审核代码：[whrss9527](https://github.com/whrss9527)
 - 批准签名：[whrss9527](https://github.com/whrss9527)
-- 隐私：ProxySwitch 不收集、不上传任何使用数据或个人信息，只在你用到的功能需要时联网，见[常见问题](#常见问题)里的「会联网吗？」。
+- 隐私：Proxi 不收集、不上传任何使用数据或个人信息，只在你用到的功能需要时联网，见[常见问题](#常见问题)里的「会联网吗？」。
 
 签名的申请和配置步骤见 [docs/signing.md](docs/signing.md)。
 
 ## 请我喝杯咖啡
 
-ProxySwitch 免费开源。觉得好用的话，可以用微信扫一扫请我喝杯咖啡 ☕（程序里「设置 → 关于」也有这张码，点一下能放大）。
+Proxi 免费开源。觉得好用的话，可以用微信扫一扫请我喝杯咖啡 ☕（程序里「设置 → 关于」也有这张码，点一下能放大）。
 
 <p align="center"><img src="web/donate-wechat.png" width="300" alt="微信赞赏码：请我喝杯咖啡"></p>
 
@@ -564,14 +567,14 @@ ProxySwitch 免费开源。觉得好用的话，可以用微信扫一扫请我�
 
 Copyright © 2026 吴彦祖
 
-ProxySwitch 是自由软件，以 [GNU 通用公共许可证第 3 版（GPL-3.0）](LICENSE) 发布：可以自由使用、研究、修改和分享；分发 ProxySwitch 或修改后的版本时，需要以同样的许可证提供源代码。
+Proxi 是自由软件，以 [GNU 通用公共许可证第 3 版（GPL-3.0）](LICENSE) 发布：可以自由使用、研究、修改和分享；分发 Proxi 或修改后的版本时，需要以同样的许可证提供源代码。
 
-「ProxySwitch」这个名字和 ProxySwitch 的图标不在 GPL 授权范围内（GPL-3.0 第 7 条 e 项）。介绍 ProxySwitch、分享未经修改的副本时可以使用；分发修改后的版本时，请换用自己的名字和图标。
+「Proxi」这个名字和 Proxi 的图标不在 GPL 授权范围内（GPL-3.0 第 7 条 e 项）。介绍 Proxi、分享未经修改的副本时可以使用；分发修改后的版本时，请换用自己的名字和图标。
 
 贡献需接受 [CONTRIBUTING.md](CONTRIBUTING.md) 里的贡献者协议。
 
 2.4.0 及以前的版本以 MIT 许可证发布，这些版本仍然适用 MIT 许可证。
 
-机场订阅使用的 [mihomo](https://github.com/MetaCubeX/mihomo) 是 GPL-3.0 许可的独立程序。ProxySwitch 不包含它的代码，只在需要时从它的官方发布下载，作为单独的进程运行。
+机场订阅使用的 [mihomo](https://github.com/MetaCubeX/mihomo) 是 GPL-3.0 许可的独立程序。Proxi 不包含它的代码，只在需要时从它的官方发布下载，作为单独的进程运行。
 
 设置界面自带的字体是 [Noto Sans SC](https://github.com/notofonts/noto-cjk)（思源黑体）的子集，使用 [SIL Open Font License 1.1](web/NotoSansSC-OFL.txt)。

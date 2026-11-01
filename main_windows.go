@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
@@ -19,7 +20,7 @@ func init() {
 	runtime.LockOSThread()
 }
 
-const singleInstanceMutex = `Local\ProxySwitch-3f1c2a9e`
+const singleInstanceMutex = legacyInstanceMutex
 
 const (
 	exitSuccess = 0
@@ -28,19 +29,20 @@ const (
 )
 
 const usageText = `用法：
-  ProxySwitch.exe                 启动托盘程序
-  ProxySwitch.exe on              开启代理（上次使用的配置）
-  ProxySwitch.exe off             关闭代理
-  ProxySwitch.exe toggle          开 / 关切换
-  ProxySwitch.exe use <配置名>     切换到指定配置并开启
-  ProxySwitch.exe share [on|off]  开关局域网共享（不写 on / off 表示切换）
-  ProxySwitch.exe diagnose [网址] [--device]
+  Proxi.exe                 启动托盘程序
+  Proxi.exe on              开启代理（上次使用的配置）
+  Proxi.exe off             关闭代理
+  Proxi.exe toggle          开 / 关切换
+  Proxi.exe use <配置名>     切换到指定配置并开启
+  Proxi.exe share [on|off]  开关局域网共享（不写 on / off 表示切换）
+  Proxi.exe diagnose [网址] [--device]
                                   网址诊断：检查网站为什么打不开，--device 从局域网设备（PS5 等）的视角
-  ProxySwitch.exe status          查看当前状态（退出码 0 表示已开启，1 表示已关闭）
-  ProxySwitch.exe settings        打开设置
-  ProxySwitch.exe update          检查更新：打开「关于」页并立即检查
-  ProxySwitch.exe uninstall [--quiet]
-                                  卸载：退出 ProxySwitch，关闭它开启的代理，取消开机自启和链接的登记；
+  Proxi.exe status          查看当前状态（退出码 0 表示已开启，1 表示已关闭）
+  Proxi.exe settings        打开设置
+  Proxi.exe float [on|off]   显示或隐藏悬浮网速按钮
+  Proxi.exe update          检查更新：打开「关于」页并立即检查
+  Proxi.exe uninstall [--quiet]
+                                  卸载：退出 Proxi，关闭它开启的代理，取消开机自启和链接的登记；
                                   安装版同时删除程序。--quiet 不询问，保留配置
 
 托盘程序在运行时，命令交给它执行，托盘图标会立即更新。`
@@ -50,7 +52,21 @@ func main() {
 	if len(os.Args) > 1 && os.Args[1] == "--dev-settings" {
 		os.Exit(runDevSettings(os.Args[2:]))
 	}
+	upgradeBrand := preparesBrandUpgrade(os.Args[1:])
+	if upgradeBrand {
+		if err := prepareBrandUpgrade(); err != nil {
+			messageBox(0, err.Error(), appName, mbOk|mbIconError|mbSetForeground|mbTopmost)
+			os.Exit(exitFailure)
+		}
+	}
 	paths := resolvePaths()
+	if !upgradeBrand && !paths.Portable && !fileExists(paths.Config) {
+		legacy := filepath.Join(configBaseDir(), legacyAppName)
+		if fileExists(filepath.Join(legacy, configFileName)) {
+			paths = pathsIn(legacy, false)
+			paths.Log = filepath.Join(legacy, legacyLogFileName)
+		}
+	}
 	setupLogger(paths.Log)
 	autostarted := false
 	updatedFrom := 0
@@ -66,7 +82,7 @@ func main() {
 			os.Exit(runCoreHost(os.Args[index+2:]))
 		}
 		if isLink(argument) {
-			// 浏览器或脚本打开的 proxyswitch:// 或 clash:// 链接。
+			// 浏览器或脚本打开的 proxi:// 或 clash:// 链接。
 			os.Exit(runLink(argument))
 		}
 		normalized := strings.ToLower(strings.TrimLeft(argument, "-/"))
@@ -170,7 +186,7 @@ func runCommand(paths Paths, command string, arguments []string) int {
 	case "use", "switch":
 		name := strings.TrimSpace(strings.Join(arguments, " "))
 		if name == "" {
-			messageBox(0, "请写上配置名，例如：ProxySwitch.exe use 公司代理", appName, mbOk|mbIconWarning|mbSetForeground|mbTopmost)
+			messageBox(0, "请写上配置名，例如：Proxi.exe use 公司代理", appName, mbOk|mbIconWarning|mbSetForeground|mbTopmost)
 			return exitUsage
 		}
 		return forwardOrRun(paths, "use\x00"+name, func(engine *Engine) error { return engine.UseProfile(name) })
@@ -192,6 +208,8 @@ func runCommand(paths Paths, command string, arguments []string) int {
 		return runDiagnoseCommand(paths, arguments)
 	case "update":
 		return forwardOrStart("update")
+	case "float":
+		return forwardOrStart("float\x00" + strings.Join(arguments, " "))
 	case "status":
 		return showStatus(paths)
 	case "uninstall":
@@ -240,7 +258,7 @@ func forwardOrStart(payload string) int {
 		return sendCommand(window, payload)
 	}
 	if err := startDetached(); err != nil {
-		messageBox(0, "无法启动 ProxySwitch："+err.Error(), appName, mbOk|mbIconError|mbSetForeground|mbTopmost)
+		messageBox(0, "无法启动 Proxi："+err.Error(), appName, mbOk|mbIconError|mbSetForeground|mbTopmost)
 		return exitFailure
 	}
 	if window := waitForRunningInstance(10 * time.Second); window != 0 {

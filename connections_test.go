@@ -39,7 +39,7 @@ func TestConnectionMonitor(t *testing.T) {
 
 	shared := testConnection("s", "", "2026-09-28T10:00:00Z", 1, 1, "DIRECT")
 	shared.Metadata.DestinationIp, shared.Metadata.InboundName, shared.Metadata.SourceIp = "1.2.3.4", coreShareListener, "192.168.1.20"
-	program := testConnection("a", "a.example", "2026-09-28T10:00:01Z", 100, 1000, "香港 01", "p1", "ProxySwitch")
+	program := testConnection("a", "a.example", "2026-09-28T10:00:01Z", 100, 1000, "香港 01", "p1", "Proxi")
 	program.Metadata.Process, program.Rule, program.RulePayload = "chrome.exe", "RuleSet", "rs-1234"
 	monitor.ingest(CoreConnections{UploadTotal: 300, DownloadTotal: 3000, Connections: []CoreConnection{
 		program, testConnection("b", "b.example", "2026-09-28T10:00:02Z", 200, 2000, "DIRECT"), shared,
@@ -52,7 +52,7 @@ func TestConnectionMonitor(t *testing.T) {
 		t.Errorf("内核这次运行的总流量：%+v", view.Session)
 	}
 	record := view.Active[1]
-	if record.Process != "chrome.exe" || record.Rule != "RuleSet rs-1234" || record.Network != "TCP" || record.Host != "a.example" || record.Share || !reflect.DeepEqual(record.Chains, []string{"香港 01", "p1", "ProxySwitch"}) {
+	if record.Process != "chrome.exe" || record.Rule != "RuleSet rs-1234" || record.Network != "TCP" || record.Host != "a.example" || record.Share || !reflect.DeepEqual(record.Chains, []string{"香港 01", "p1", "Proxi"}) {
 		t.Errorf("连接的信息不对：%+v", record)
 	}
 	if device := view.Active[2]; !device.Share || device.Host != "1.2.3.4" || device.Client != "192.168.1.20" {

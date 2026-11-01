@@ -16,7 +16,7 @@ import (
 // 使用单独的浏览器数据目录，不影响用户自己的浏览器。都没有或设置为 browser 时用默认浏览器打开。
 
 // settingsWindowTitle 必须与 web/settings.html 的 <title> 一致，用来找到已经打开的设置窗口。
-const settingsWindowTitle = "ProxySwitch 设置"
+const settingsWindowTitle = "Proxi 设置"
 
 const asfwAny = 0xFFFFFFFF
 

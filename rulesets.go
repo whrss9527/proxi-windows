@@ -14,7 +14,7 @@ import (
 // 自定义规则排在所有规则集前面，都没命中的流量按「其余流量」（final_policy）走。所有订阅配置共用这一份。
 //
 // 三种加载方式：内置的（大陆直连）直接写成规则；纯规则列表（.list、.txt、.yaml、.mrs）下载后交给内核的 rule-provider；
-// 小火箭 / Surge / Clash 的完整配置（.conf 等，或者下载后认出来是完整配置的）由 ProxySwitch 转换后并入。
+// 小火箭 / Surge / Clash 的完整配置（.conf 等，或者下载后认出来是完整配置的）由 Proxi 转换后并入。
 
 // RuleSet 是一个规则集。Url 是 http(s) 地址、本机文件（file:///…）或内置的 builtin://china-direct；Policy 是去向：
 // 空表示按规则文件里写的策略（完整配置；纯列表空着时走节点，内置的直连）；Behavior 是纯列表的类型

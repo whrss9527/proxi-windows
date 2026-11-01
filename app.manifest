@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
-  <assemblyIdentity type="win32" name="ProxySwitch" version="2.0.0.0" processorArchitecture="*"/>
-  <description>ProxySwitch</description>
+  <assemblyIdentity type="win32" name="Proxi" version="2.0.0.0" processorArchitecture="*"/>
+  <description>Proxi</description>
   <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
     <security>
       <requestedPrivileges>

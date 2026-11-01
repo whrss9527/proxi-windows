@@ -17,9 +17,7 @@ import (
 )
 
 var (
-	procGetMenuItemInfoW   = user32.NewProc("GetMenuItemInfoW")
-	procCreateCompatibleDC = gdi32.NewProc("CreateCompatibleDC")
-	procDeleteDC           = gdi32.NewProc("DeleteDC")
+	procGetMenuItemInfoW = user32.NewProc("GetMenuItemInfoW")
 )
 
 func TestMenuHeaderDisabledButKeepsFullText(t *testing.T) {
@@ -29,7 +27,7 @@ func TestMenuHeaderDisabledButKeepsFullText(t *testing.T) {
 	defer r.close()
 	var texts []*uint16
 	menu := buildMenu([]MenuItem{
-		{Text: "ProxySwitch", Header: "brand"},
+		{Text: "Proxi", Header: "brand"},
 		{Id: 1, Text: "代理已开启：公司 && 内网", Header: "on", Accent: "#16a34a"},
 		{Id: 2, Text: "关闭代理"},
 	}, &texts, r)
@@ -70,7 +68,7 @@ func TestMenuHeaderNativeRendering(t *testing.T) {
 				gdi32.NewProc("GetObjectW").Call(r.font, unsafe.Sizeof(actualFont), uintptr(unsafe.Pointer(&actualFont)))
 				t.Logf("原生菜单字体：%s，高度 %d", syscall.UTF16ToString(actualFont.faceName[:]), actualFont.height)
 				r.dark, r.highContrast = dark, false
-				r.entries[1] = menuHeaderEntry{text: syscall.StringToUTF16("ProxySwitch"), kind: "brand"}
+				r.entries[1] = menuHeaderEntry{text: syscall.StringToUTF16("Proxi"), kind: "brand"}
 				r.entries[2] = menuHeaderEntry{text: syscall.StringToUTF16("代理已开启：公司内网"), kind: "on", accent: "#16a34a"}
 				brand := measureItemStruct{controlType: odtMenu, itemData: 1}
 				status := measureItemStruct{controlType: odtMenu, itemData: 2}
@@ -117,7 +115,7 @@ func TestMenuHeaderNativeRendering(t *testing.T) {
 				if long.width > uint32(r.maxWidth) {
 					t.Error("较小显示器也要遵守实际可用宽度")
 				}
-				if folder := os.Getenv("PROXYSWITCH_MENU_SNAPSHOTS"); folder != "" {
+				if folder := os.Getenv("PROXI_MENU_SNAPSHOTS"); folder != "" {
 					if err := os.MkdirAll(folder, 0755); err != nil {
 						t.Fatal(err)
 					}

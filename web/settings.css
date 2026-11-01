@@ -1,8 +1,8 @@
-/* ProxySwitch 设置页：参照 macOS 的毛玻璃风格——柔和的彩色底，上面是半透明的玻璃卡片、浮起的侧栏和毛玻璃的对话框、
+/* Proxi 设置页：参照 macOS 的毛玻璃风格——柔和的彩色底，上面是半透明的玻璃卡片、浮起的侧栏和毛玻璃的对话框、
    菜单、通知；浅色 / 深色两套主题。字体优先用苹方，没装时用程序自带的思源黑体（Noto Sans SC 的常用字子集）。 */
 
 @font-face {
-  font-family: "ProxySwitch Sans";
+  font-family: "Proxi Sans";
   src: url("/assets/NotoSansSC-subset.woff2") format("woff2");
   font-weight: 100 900;
   font-style: normal;
@@ -11,9 +11,9 @@
 
 :root {
   color-scheme: light;
-  --font: "PingFang SC", "ProxySwitch Sans", "Microsoft YaHei UI", "Microsoft YaHei", system-ui, sans-serif;
+  --font: "PingFang SC", "Proxi Sans", "Microsoft YaHei UI", "Microsoft YaHei", system-ui, sans-serif;
   --font-display: var(--font);
-  --font-mono: "SF Mono", "Cascadia Mono", "JetBrains Mono", Consolas, "PingFang SC", "ProxySwitch Sans", "Microsoft YaHei UI", monospace;
+  --font-mono: "SF Mono", "Cascadia Mono", "JetBrains Mono", Consolas, "PingFang SC", "Proxi Sans", "Microsoft YaHei UI", monospace;
 
   /* 窗口的底：浅色的蓝、紫、粉、青几团柔光，像 macOS 的桌面透过窗口。 */
   --bg: #edf1f8;
@@ -232,6 +232,8 @@ a:hover {
 }
 
 .save-status { display: inline-flex; gap: 6px; align-items: center; }
+.floating-preview { display: inline-flex; align-items: center; gap: 12px; padding: 7px 16px 7px 10px; border: 1px solid var(--control-stroke-strong); border-radius: 30px; background: var(--control); color: var(--text); line-height: 17px; font-size: 12px; vertical-align: middle; margin-right: 12px; }
+.floating-preview-logo { width: 30px; height: 30px; }
 .save-status .icon { width: 14px; height: 14px; }
 .save-status[data-save-status="saved"] { color: var(--success); }
 .save-status[data-save-status="error"] { color: var(--danger); }

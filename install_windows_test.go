@@ -50,17 +50,17 @@ func waitUntilGone(paths ...string) bool {
 func TestRemovalPlanDeletesProgramAndData(t *testing.T) {
 	// 路径里有中文、空格、& 和括号：批处理按系统代码页解析，路径经环境变量传入才不会出错。
 	root := filepath.Join(t.TempDir(), "卸载 测试 & (1)")
-	installDir := filepath.Join(root, "Programs", "ProxySwitch")
-	executable := filepath.Join(installDir, "ProxySwitch.exe")
-	for _, name := range []string{"ProxySwitch.exe", "ProxySwitch.exe.old", "ProxySwitch.exe.1727000000.old", "ProxySwitch.exe.download"} {
+	installDir := filepath.Join(root, "Programs", "Proxi")
+	executable := filepath.Join(installDir, "Proxi.exe")
+	for _, name := range []string{"Proxi.exe", "Proxi.exe.old", "Proxi.exe.1727000000.old", "Proxi.exe.download"} {
 		createTestFile(t, filepath.Join(installDir, name))
 	}
-	data := filepath.Join(root, "数据", "ProxySwitch")
-	webData := filepath.Join(root, "浏览器数据", "ProxySwitch")
+	data := filepath.Join(root, "数据", "Proxi")
+	webData := filepath.Join(root, "浏览器数据", "Proxi")
 	createTestFile(t, filepath.Join(data, "core", "config.yaml"))
 	createTestFile(t, filepath.Join(data, "config.jsonc"))
 	createTestFile(t, filepath.Join(webData, "WebView", "Local State"))
-	scripts, _ := filepath.Glob(filepath.Join(os.TempDir(), "proxyswitch-uninstall-*.cmd"))
+	scripts, _ := filepath.Glob(filepath.Join(os.TempDir(), "proxi-uninstall-*.cmd"))
 
 	plan := removalPlan{executable: executable, data: []string{data, webData}, waitFor: exitedProcessId(t)}
 	if err := plan.start(); err != nil {
@@ -73,7 +73,7 @@ func TestRemovalPlanDeletesProgramAndData(t *testing.T) {
 	// 批处理最后删掉自己。
 	deadline := time.Now().Add(10 * time.Second)
 	for {
-		after, _ := filepath.Glob(filepath.Join(os.TempDir(), "proxyswitch-uninstall-*.cmd"))
+		after, _ := filepath.Glob(filepath.Join(os.TempDir(), "proxi-uninstall-*.cmd"))
 		if len(after) <= len(scripts) {
 			break
 		}
@@ -85,8 +85,8 @@ func TestRemovalPlanDeletesProgramAndData(t *testing.T) {
 }
 
 func TestRemovalPlanKeepsOtherFiles(t *testing.T) {
-	installDir := filepath.Join(t.TempDir(), "ProxySwitch")
-	executable := filepath.Join(installDir, "ProxySwitch.exe")
+	installDir := filepath.Join(t.TempDir(), "Proxi")
+	executable := filepath.Join(installDir, "Proxi.exe")
 	createTestFile(t, executable)
 	other := filepath.Join(installDir, "说明.txt")
 	createTestFile(t, other)
@@ -107,9 +107,9 @@ func TestRemovalPlanKeepsOtherFiles(t *testing.T) {
 func TestInstalledCopyAndLinks(t *testing.T) {
 	requireRegistryTests(t)
 	if readRegistryString(hkeyCurrentUser, uninstallKey, "InstallLocation") != "" {
-		t.Skip("这台电脑装了 ProxySwitch，不动它的卸载项")
+		t.Skip("这台电脑装了 Proxi，不动它的卸载项")
 	}
-	installDir := filepath.Join(t.TempDir(), "Programs", "ProxySwitch")
+	installDir := filepath.Join(t.TempDir(), "Programs", "Proxi")
 	key, err := createRegistryKey(hkeyCurrentUser, uninstallKey)
 	if err != nil {
 		t.Fatal(err)
@@ -119,33 +119,33 @@ func TestInstalledCopyAndLinks(t *testing.T) {
 		t.Fatal(err)
 	}
 	key.Close()
-	if !isInstalledCopy(filepath.Join(installDir, "ProxySwitch.exe")) {
+	if !isInstalledCopy(filepath.Join(installDir, "Proxi.exe")) {
 		t.Error("安装目录里的程序应该是安装版")
 	}
-	if isInstalledCopy(filepath.Join(t.TempDir(), "ProxySwitch.exe")) {
+	if isInstalledCopy(filepath.Join(t.TempDir(), "Proxi.exe")) {
 		t.Error("别处的程序不是安装版")
 	}
 
-	// 链接登记的是原来位置的 ProxySwitch-arm64.exe：也要取消；登记给别的程序的不动。
-	ours, others := "proxyswitch-uninstall-test", "proxyswitch-uninstall-test-other"
+	// 链接登记的是原来位置的 Proxi-arm64.exe：也要取消；登记给别的程序的不动。
+	ours, others := "proxi-uninstall-test", "proxi-uninstall-test-other"
 	t.Cleanup(func() {
 		_ = deleteRegistryTree(hkeyCurrentUser, classesKey+ours)
 		_ = deleteRegistryTree(hkeyCurrentUser, classesKey+others)
 	})
-	if err := registerLink(ours, "ProxySwitch", `D:\下载\ProxySwitch-arm64.exe`); err != nil {
+	if err := registerLink(ours, "Proxi", `D:\下载\Proxi-arm64.exe`); err != nil {
 		t.Fatal(err)
 	}
 	if err := registerLink(others, "clash", `C:\Program Files\Clash Verge\clash-verge.exe`); err != nil {
 		t.Fatal(err)
 	}
-	if err := unregisterProxySwitchLink(ours); err != nil {
+	if err := unregisterProxiLink(ours); err != nil {
 		t.Fatal(err)
 	}
-	if err := unregisterProxySwitchLink(others); err != nil {
+	if err := unregisterProxiLink(others); err != nil {
 		t.Fatal(err)
 	}
 	if readRegistryString(hkeyCurrentUser, classesKey+ours+`\shell\open\command`, "") != "" {
-		t.Error("ProxySwitch 的链接登记应该取消")
+		t.Error("Proxi 的链接登记应该取消")
 	}
 	if readRegistryString(hkeyCurrentUser, classesKey+others+`\shell\open\command`, "") == "" {
 		t.Error("别的程序的链接登记不应该动")

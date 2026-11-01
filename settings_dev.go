@@ -355,7 +355,7 @@ func (backend *devBackend) SetLoopback(exempt []string) (LoopbackInfo, error) {
 // TakeOverClashLinks 在开发模式下只改模拟的登记情况。
 func (backend *devBackend) TakeOverClashLinks() error {
 	return backend.locked(func() error {
-		backend.links = LinksInfo{Clash: "ProxySwitch", ClashOurs: true}
+		backend.links = LinksInfo{Clash: "Proxi", ClashOurs: true}
 		return nil
 	})
 }
@@ -520,7 +520,7 @@ func runDevSettings(args []string) int {
 		}
 	}
 	if directory == "" {
-		created, err := os.MkdirTemp("", "proxyswitch-dev-")
+		created, err := os.MkdirTemp("", "proxi-dev-")
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			return 1

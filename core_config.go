@@ -8,7 +8,7 @@ import (
 )
 
 // 订阅配置由 mihomo 内核代理。这里按订阅生成内核的配置：每个订阅是一个读本地文件的 proxy-provider，
-// 配一个手动选择的组（默认选“自动选择”，即延迟最低的节点）；顶层的 ProxySwitch 组选正在使用的订阅，
+// 配一个手动选择的组（默认选“自动选择”，即延迟最低的节点）；顶层的 Proxi 组选正在使用的订阅，
 // 规则把流量交给它。YAML 兼容 JSON，所以直接用 encoding/json 生成，不用处理 YAML 的引号和转义。
 
 // coreVersion 是使用的 mihomo 版本。Windows 上下载这个版本的官方发布，并按发布构建时写入的 SHA-256 校验。
@@ -17,7 +17,7 @@ const coreVersion = "v1.19.31"
 const (
 	defaultCorePort = 17890
 	// coreTopGroup 是规则最终把流量交给的组，它的选项是各个订阅的组。
-	coreTopGroup = "ProxySwitch"
+	coreTopGroup = "Proxi"
 	// coreHealthInterval 是内核在后台测试节点延迟的间隔（秒），lazy 表示只在组被使用时才测。
 	coreHealthInterval = 1800
 	// coreShareListener 是局域网共享的入口，也是它专用的分流规则（sub-rules）的名字。
@@ -213,22 +213,22 @@ type coreDns struct {
 }
 
 // coreTunDevice 是虚拟网卡的名字。测试时换成建不出来的名字（太长），内核只记一条日志，不会真的改路由。
-var coreTunDevice = "ProxySwitch"
+var coreTunDevice = "Proxi"
 
 func coreTunConfig() (*coreTun, *coreDns) {
 	return &coreTun{
-			Enable: true, Device: coreTunDevice, Stack: "gvisor", AutoRoute: true, AutoDetectInterface: true,
-			DnsHijack: []string{"any:53", "tcp://any:53"},
-		}, &coreDns{
-			Enable: true, EnhancedMode: "fake-ip", FakeIpRange: "198.18.0.1/16",
-			FakeIpFilter: []string{
-				"*.lan", "*.local", "*.localdomain", "*.home.arpa", "localhost.ptlogin2.qq.com",
-				"+.msftconnecttest.com", "+.msftncsi.com", "time.windows.com", "+.pool.ntp.org", "time.*.com",
-				"+.srv.nintendo.net", "+.stun.playstation.net", "xbox.*.microsoft.com", "+.xboxlive.com", "stun.*.*",
-			},
-			DefaultNameserver: []string{"223.5.5.5", "119.29.29.29"},
-			Nameserver:        []string{"https://doh.pub/dns-query", "https://dns.alidns.com/dns-query"},
-		}
+		Enable: true, Device: coreTunDevice, Stack: "gvisor", AutoRoute: true, AutoDetectInterface: true,
+		DnsHijack: []string{"any:53", "tcp://any:53"},
+	}, &coreDns{
+		Enable: true, EnhancedMode: "fake-ip", FakeIpRange: "198.18.0.1/16",
+		FakeIpFilter: []string{
+			"*.lan", "*.local", "*.localdomain", "*.home.arpa", "localhost.ptlogin2.qq.com",
+			"+.msftconnecttest.com", "+.msftncsi.com", "time.windows.com", "+.pool.ntp.org", "time.*.com",
+			"+.srv.nintendo.net", "+.stun.playstation.net", "xbox.*.microsoft.com", "+.xboxlive.com", "stun.*.*",
+		},
+		DefaultNameserver: []string{"223.5.5.5", "119.29.29.29"},
+		Nameserver:        []string{"https://doh.pub/dns-query", "https://dns.alidns.com/dns-query"},
+	}
 }
 
 type coreRuleProvider struct {
@@ -283,7 +283,7 @@ func coreConfigText(settings CoreSettings, controller, secret string) []byte {
 		FindProcessMode:    "always",
 		ExternalController: controller,
 		Secret:             secret,
-		// 选中的节点由 ProxySwitch 记在配置文件里，每次启动后重新设置，不用内核自己记。
+		// 选中的节点由 Proxi 记在配置文件里，每次启动后重新设置，不用内核自己记。
 		Profile:        map[string]bool{"store-selected": false, "store-fake-ip": false},
 		GeoxUrl:        map[string]string{},
 		ProxyProviders: map[string]coreProvider{},

@@ -30,6 +30,8 @@ const (
 	menuTun
 	menuDiagnose
 	menuExit
+	menuFloating
+	menuFloatingReset
 	menuTerminalBase = 50
 	menuProfileBase  = 100
 	// 订阅子菜单里的各项（节点、测速、更新订阅）从这里开始编号，含义记在 App.menuChoices。
@@ -66,6 +68,7 @@ type App struct {
 	engine   *Engine
 	tray     *Tray
 	settings *SettingsServer
+	floating *floatingWindow
 
 	icons        map[string]uintptr
 	menuBitmaps  map[string]uintptr
@@ -139,7 +142,7 @@ func (app *App) run(autostarted bool, settingsPage string) error {
 	}
 	refreshAutostartPath()
 	refreshInstallInfo()
-	slog.Info("ProxySwitch 已启动", "version", appVersion, "portable", app.paths.Portable, "autostart", autostarted)
+	slog.Info("Proxi 已启动", "version", appVersion, "portable", app.paths.Portable, "autostart", autostarted)
 
 	if loadErr != nil && !created {
 		app.notify(Notice{Level: noticeError, Title: "配置文件有错误", Text: loadErr.Error()})
@@ -154,13 +157,13 @@ func (app *App) run(autostarted bool, settingsPage string) error {
 	go app.watchUpdates()
 
 	if created {
-		app.notify(Notice{Level: noticeInfo, Title: "ProxySwitch 已在托盘运行", Text: "单击托盘图标打开设置，右键打开菜单", Icon: iconStateOff})
+		app.notify(Notice{Level: noticeInfo, Title: "Proxi 已在托盘运行", Text: "单击托盘图标打开设置，右键打开菜单", Icon: iconStateOff})
 	}
 	if app.crashedLastTime {
-		app.notify(Notice{Level: noticeWarning, Title: "ProxySwitch 上次意外退出了", Text: "详细信息已记录，点这里查看；反馈问题时附上会更快解决", Page: "diagnostics"})
+		app.notify(Notice{Level: noticeWarning, Title: "Proxi 上次意外退出了", Text: "详细信息已记录，点这里查看；反馈问题时附上会更快解决", Page: "diagnostics"})
 	}
 	if previous := app.engine.RecordVersion(appVersion); previous != "" {
-		app.notify(Notice{Level: noticeInfo, Title: "ProxySwitch 已更新到 " + appVersion, Text: "原来的版本是 " + previous + "，设置和代理配置都已保留", Icon: iconStateOn, Color: profilePalette[1], Page: "about", Tag: noticeTagUpdate})
+		app.notify(Notice{Level: noticeInfo, Title: "Proxi 已更新到 " + appVersion, Text: "原来的版本是 " + previous + "，设置和代理配置都已保留", Icon: iconStateOn, Color: profilePalette[1], Page: "about", Tag: noticeTagUpdate})
 	}
 	// 首次运行、或还没有任何代理配置时直接打开设置页引导添加；开机自启时不打扰。
 	config := app.engine.Config()
@@ -187,9 +190,10 @@ func (app *App) applyUiConfig() {
 	app.tray.DoubleClickEnabled = config.TrayDoubleClick != "none"
 	app.registerHotkeys(config)
 	app.registerLinks(config.UrlLinks)
+	app.syncFloating()
 }
 
-// registerLinks 在启动时和 url_links 改变时登记或取消 proxyswitch:// 和 clash:// 链接。
+// registerLinks 在启动时和 url_links 改变时登记或取消 proxi:// 和 clash:// 链接。
 func (app *App) registerLinks(enabled bool) {
 	if app.linksRegistered != nil && *app.linksRegistered == enabled {
 		return
@@ -270,6 +274,9 @@ func (app *App) refresh() {
 		app.tunActive = active
 	}
 	app.tray.Update(app.iconFor(status), app.tooltipFor(status))
+	if app.floating != nil {
+		app.floating.refresh(status)
+	}
 }
 
 func (app *App) iconStyleFor(status Status) (string, string) {
@@ -582,6 +589,8 @@ func (app *App) menuItems() []MenuItem {
 		}
 	}
 	items = append(items,
+		MenuItem{Id: menuFloating, Text: "悬浮网速按钮", Checked: config.FloatingWidget.Enabled},
+		MenuItem{Id: menuFloatingReset, Text: "重置悬浮位置", Disabled: !config.FloatingWidget.Enabled},
 		MenuItem{Id: menuSettings, Text: "设置...", Default: config.TrayClick == "settings"},
 		MenuItem{Id: menuAutostart, Text: "开机自动启动", Checked: isAutostartEnabled()},
 		MenuItem{Id: menuUpdate, Text: app.updateMenuText()},
@@ -819,6 +828,14 @@ func (app *App) menuDot(profileColor string) uintptr {
 func (app *App) handleMenu(command uint32) {
 	config := app.engine.Config()
 	switch {
+	case command == menuFloating && config != nil:
+		_ = app.setFloating(!config.FloatingWidget.Enabled)
+	case command == menuFloatingReset && config != nil:
+		updated := config.Clone()
+		updated.FloatingWidget.Positioned = false
+		if app.engine.SaveConfig(updated) == nil {
+			app.applyUiConfig()
+		}
 	case command == menuToggle:
 		app.toggleOrSetup()
 	case command == menuSettings:
@@ -942,7 +959,7 @@ func (app *App) onTimer(id uintptr) {
 	app.refresh()
 }
 
-// onCopyData 执行另一个 ProxySwitch 进程转发来的命令行，返回退出码。
+// onCopyData 执行另一个 Proxi 进程转发来的命令行，返回退出码。
 func (app *App) onCopyData(data []byte) uintptr {
 	command, argument, _ := strings.Cut(string(data), "\x00")
 	shown := app.problemNotices
@@ -958,6 +975,14 @@ func (app *App) onCopyData(data []byte) uintptr {
 		err = app.engine.UseProfile(argument)
 	case "share":
 		err = app.shareCommand(argument)
+	case "float":
+		if config := app.engine.Config(); config != nil {
+			var target bool
+			target, err = floatingCommandTarget(argument, config.FloatingWidget.Enabled)
+			if err == nil {
+				err = app.setFloating(target)
+			}
+		}
 	case "diagnose":
 		app.openDiagnose(argument)
 	case "update":
@@ -998,6 +1023,9 @@ func (app *App) onNotificationClick() {
 }
 
 func (app *App) onSettingChange(section string) {
+	if app.floating != nil {
+		app.floating.restyle()
+	}
 	switch section {
 	case "ImmersiveColorSet":
 		refreshMenuTheme()
@@ -1013,6 +1041,10 @@ func (app *App) onEndSession() {
 }
 
 func (app *App) onDestroy() {
+	if app.floating != nil {
+		app.floating.close()
+		app.floating = nil
+	}
 	app.handleExit()
 	app.sleep.update(ShareConfig{})
 	if app.subscriptionService != nil {
@@ -1025,7 +1057,7 @@ func (app *App) onDestroy() {
 		procDeleteObject.Call(bitmap)
 		delete(app.menuBitmaps, key)
 	}
-	slog.Info("ProxySwitch 已退出")
+	slog.Info("Proxi 已退出")
 }
 
 // handleExit 在退出或注销时按 disable_on_exit 关闭代理，只执行一次。正在使用订阅时，内核随程序退出，

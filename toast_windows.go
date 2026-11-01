@@ -21,9 +21,9 @@ import (
 // 也不会在界面线程里重入消息循环。
 
 const (
-	toastAppId          = "whrss9527.ProxySwitch"
+	toastAppId          = legacyToastAppID
 	toastAppKey         = `Software\Classes\AppUserModelId\` + toastAppId
-	toastGroup          = "ProxySwitch"
+	toastGroup          = legacyAppName
 	toastIconSize       = 96
 	toastMinBuild       = 17763
 	roInitMultithreaded = 1

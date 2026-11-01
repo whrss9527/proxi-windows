@@ -44,7 +44,7 @@ func TestCoreConfigText(t *testing.T) {
 		t.Errorf("顶层组应包含所有订阅：%+v", group)
 	}
 	last := config.Rules[len(config.Rules)-1]
-	if last != "MATCH,ProxySwitch" || !contains(config.Rules, "IP-CIDR,192.168.0.0/16,DIRECT,no-resolve") {
+	if last != "MATCH,Proxi" || !contains(config.Rules, "IP-CIDR,192.168.0.0/16,DIRECT,no-resolve") {
 		t.Errorf("规则应让局域网直连、其余交给顶层组：%v", config.Rules)
 	}
 	// 分流规则（引擎按规则集拼好的，最后一条是 MATCH）：地理数据还没下载时先跳过 GEOIP 和 GEOSITE，否则内核会拒绝配置。
@@ -127,10 +127,10 @@ func TestCoreConfigShare(t *testing.T) {
 	// 本机用订阅：共享的设备和本机完全一样。
 	settings.Subscriptions = []CoreSubscription{{Id: "p1"}}
 	settings.Active = "p1"
-	settings.CustomRules = []string{"DOMAIN-SUFFIX,youtube.com,ProxySwitch"}
+	settings.CustomRules = []string{"DOMAIN-SUFFIX,youtube.com,Proxi"}
 	settings.Share.Upstream = ShareUpstream{Kind: shareUpstreamCore}
 	config = parse(settings)
-	if config.MixedPort != 17890 || !reflect.DeepEqual(config.SubRules[coreShareListener], config.Rules) || !contains(config.Rules, "DOMAIN-SUFFIX,youtube.com,ProxySwitch") {
+	if config.MixedPort != 17890 || !reflect.DeepEqual(config.SubRules[coreShareListener], config.Rules) || !contains(config.Rules, "DOMAIN-SUFFIX,youtube.com,Proxi") {
 		t.Errorf("本机用订阅时共享的设备用同样的规则：%+v", config.SubRules)
 	}
 

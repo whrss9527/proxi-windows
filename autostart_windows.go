@@ -3,6 +3,7 @@
 package main
 
 import (
+	"errors"
 	"os"
 	"strings"
 )
@@ -11,7 +12,7 @@ import (
 
 const (
 	runKey       = `Software\Microsoft\Windows\CurrentVersion\Run`
-	runValueName = "ProxySwitch"
+	runValueName = "Proxi"
 )
 
 func autostartCommand() (string, error) {
@@ -23,14 +24,15 @@ func autostartCommand() (string, error) {
 }
 
 func isAutostartEnabled() bool {
-	return strings.TrimSpace(readRegistryString(hkeyCurrentUser, runKey, runValueName)) != ""
+	return strings.TrimSpace(readRegistryString(hkeyCurrentUser, runKey, runValueName)) != "" || legacyOwnedCommand(readRegistryString(hkeyCurrentUser, runKey, legacyAppName))
 }
 
 // refreshAutostartPath 在已开启自启、但记录的不是当前 exe 路径时（exe 被挪动或更新到别处）改成当前路径。
 func refreshAutostartPath() {
 	current := strings.TrimSpace(readRegistryString(hkeyCurrentUser, runKey, runValueName))
+	legacy := strings.TrimSpace(readRegistryString(hkeyCurrentUser, runKey, legacyAppName))
 	command, err := autostartCommand()
-	if current == "" || err != nil || strings.EqualFold(current, command) {
+	if err != nil || current == "" && !legacyOwnedCommand(legacy) || strings.EqualFold(current, command) && legacy == "" {
 		return
 	}
 	_ = setAutostart(true)
@@ -42,12 +44,22 @@ func setAutostart(enabled bool) error {
 		return err
 	}
 	defer key.Close()
+	legacy, _ := key.String(legacyAppName)
+	removeLegacy := func() error {
+		if legacyOwnedCommand(legacy) {
+			return key.DeleteValue(legacyAppName)
+		}
+		return nil
+	}
 	if !enabled {
-		return key.DeleteValue(runValueName)
+		return errors.Join(key.DeleteValue(runValueName), removeLegacy())
 	}
 	command, err := autostartCommand()
 	if err != nil {
 		return err
 	}
-	return key.SetString(runValueName, command)
+	if err := key.SetString(runValueName, command); err != nil {
+		return err
+	}
+	return removeLegacy()
 }

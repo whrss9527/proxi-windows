@@ -8,7 +8,7 @@ const kindHints = {
   http: "最常见的类型。代理软件的设置里一般写着「HTTP 端口」或「混合端口」。",
   socks: "SOCKS5 端口。部分程序不支持 SOCKS5，如果代理软件有 HTTP 或混合端口，优先用那个。",
   pac: "由自动配置脚本决定哪些网站走代理，常见于公司和学校网络。",
-  subscription: "填机场提供的订阅地址，ProxySwitch 用内置的代理内核连接订阅里的节点，不需要另外安装代理软件。",
+  subscription: "填机场提供的订阅地址，Proxi 用内置的代理内核连接订阅里的节点，不需要另外安装代理软件。",
   custom: "给不同协议分别指定代理，写法：http=主机:端口;https=主机:端口;socks=主机:端口",
 };
 
@@ -1366,8 +1366,8 @@ function openDonateDialog() {
 
 // ---------- 策略组 ----------
 
-// 内核和 ProxySwitch 自己用的名字，不能拿来当组名（与程序里的 reservedGroupNames 一致）。
-const reservedGroupNames = ["DIRECT", "REJECT", "REJECT-DROP", "PASS", "GLOBAL", "COMPATIBLE", "ProxySwitch", "上游代理", "lan-share", "自动选择"];
+// 内核和 Proxi 自己用的名字，不能拿来当组名（与程序里的 reservedGroupNames 一致）。
+const reservedGroupNames = ["DIRECT", "REJECT", "REJECT-DROP", "PASS", "GLOBAL", "COMPATIBLE", "Proxi", "上游代理", "lan-share", "自动选择"];
 
 // groupNameProblem 检查策略组的名字，others 是其他策略组，nodes 是节点名（知道时检查重名）。没有问题时返回空。
 function groupNameProblem(name, others, nodes) {

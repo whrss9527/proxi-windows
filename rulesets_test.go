@@ -245,7 +245,7 @@ func TestEngineRuleSets(t *testing.T) {
 	}
 	// 还没下载好的规则集先跳过，内置的照用；其余流量没有规则文件的 FINAL 时走节点。
 	settings := core.last()
-	if want := []string{"GEOSITE,cn,DIRECT", "GEOIP,CN,DIRECT", "MATCH,ProxySwitch"}; !reflect.DeepEqual(settings.Rules, want) || len(settings.RuleProviders) != 0 || !engine.GeoDue() {
+	if want := []string{"GEOSITE,cn,DIRECT", "GEOIP,CN,DIRECT", "MATCH,Proxi"}; !reflect.DeepEqual(settings.Rules, want) || len(settings.RuleProviders) != 0 || !engine.GeoDue() {
 		t.Errorf("还没下载好时只用内置的规则：%+v", settings.Rules)
 	}
 
@@ -289,8 +289,8 @@ func TestEngineRuleSets(t *testing.T) {
 	want := []string{
 		"RULE-SET," + list.Id() + ",流媒体",
 		"DOMAIN-SUFFIX,video.example,流媒体",
-		"DOMAIN-SUFFIX,google.com,ProxySwitch",
-		"GEOIP,US,ProxySwitch",
+		"DOMAIN-SUFFIX,google.com,Proxi",
+		"GEOIP,US,Proxi",
 		"GEOSITE,cn,DIRECT", "GEOIP,CN,DIRECT",
 		"MATCH,DIRECT",
 	}

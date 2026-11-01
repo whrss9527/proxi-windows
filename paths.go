@@ -6,19 +6,19 @@ import (
 )
 
 // appVersion 在发布构建时由 -ldflags "-X main.appVersion=x.y.z" 注入。
-var appVersion = "2.5.3"
+var appVersion = "2.6.0"
 
 const (
-	appName        = "ProxySwitch"
+	appName        = "Proxi"
 	configFileName = "config.jsonc"
 	stateFileName  = "state.json"
-	logFileName    = "proxyswitch.log"
+	logFileName    = "proxi.log"
 	crashFileName  = "crash.log"
-	repositoryUrl  = "https://github.com/whrss9527/proxyswitch"
+	repositoryUrl  = "https://github.com/whrss9527/proxi-windows"
 )
 
 // Paths 是配置、状态、日志文件的位置。
-// exe 同目录下存在 config.jsonc 时为便携模式，所有文件放在 exe 目录；否则放在 %APPDATA%\ProxySwitch。
+// exe 同目录下存在 config.jsonc 时为便携模式，所有文件放在 exe 目录；否则放在 %APPDATA%\Proxi。
 // Crash 记录程序崩溃时的输出，PreviousCrash 是上次运行留下的崩溃记录。
 // Core 是代理内核的工作目录：内核程序、它的配置、订阅文件和地理数据。
 type Paths struct {
@@ -43,15 +43,7 @@ func resolvePaths() Paths {
 		}
 	}
 	if directory == "" {
-		base := os.Getenv("APPDATA")
-		if base == "" {
-			if configDir, err := os.UserConfigDir(); err == nil {
-				base = configDir
-			} else {
-				base = "."
-			}
-		}
-		directory = filepath.Join(base, appName)
+		directory = filepath.Join(configBaseDir(), appName)
 	}
 	return pathsIn(directory, portable)
 }

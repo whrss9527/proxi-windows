@@ -66,7 +66,7 @@ func TestGuardSystemProxy(t *testing.T) {
 		t.Error("重新开启代理后应继续守护")
 	}
 
-	// 用 ProxySwitch 关掉代理后不管。
+	// 用 Proxi 关掉代理后不管。
 	if err := engine.TurnOff(); err != nil {
 		t.Fatal(err)
 	}

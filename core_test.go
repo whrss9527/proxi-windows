@@ -42,18 +42,18 @@ func freeProxyPort() (int, error) {
 	return 0, errors.New("找不到 TCP 和 UDP 都空着的端口")
 }
 
-// 用真实的 mihomo 测内核管理：设置 PROXYSWITCH_CORE 为 mihomo 程序的路径才运行（CI 会下载固定版本的内核）。
+// 用真实的 mihomo 测内核管理：设置 PROXI_CORE 为 mihomo 程序的路径才运行（CI 会下载固定版本的内核）。
 func requireCoreBinary(t *testing.T) string {
 	t.Helper()
-	binary := os.Getenv("PROXYSWITCH_CORE")
+	binary := os.Getenv("PROXI_CORE")
 	if binary == "" {
-		t.Skip("设置 PROXYSWITCH_CORE 为 mihomo 程序的路径才运行内核测试")
+		t.Skip("设置 PROXI_CORE 为 mihomo 程序的路径才运行内核测试")
 	}
 	return binary
 }
 
 // 测试访问的是假域名：内核规则里本机和局域网地址直连，访问本机的测试网站不会经过节点。
-const coreTestHost = "proxyswitch.test"
+const coreTestHost = "proxi.test"
 
 // countingProxy 充当订阅里的节点：记录连接次数，不管请求哪个地址都转给本机的测试网站。
 type countingProxy struct {
@@ -550,7 +550,7 @@ func TestCoreAutoGroupAfterReload(t *testing.T) {
 		<-polled
 	}()
 	for round := 0; round < 10; round++ {
-		settings.CustomRules = []string{fmt.Sprintf("DOMAIN-SUFFIX,round%d.invalid,ProxySwitch", round)}
+		settings.CustomRules = []string{fmt.Sprintf("DOMAIN-SUFFIX,round%d.invalid,Proxi", round)}
 		if err := core.Wait(core.Sync(settings), 30*time.Second); err != nil {
 			t.Fatal(err)
 		}

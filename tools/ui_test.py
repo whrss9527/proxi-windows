@@ -25,7 +25,7 @@ import urllib.request
 from playwright.sync_api import sync_playwright
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SHOTS = sys.argv[1] if len(sys.argv) > 1 else os.path.join(tempfile.gettempdir(), "proxyswitch-ui")
+SHOTS = sys.argv[1] if len(sys.argv) > 1 else os.path.join(tempfile.gettempdir(), "proxi-ui")
 os.makedirs(SHOTS, exist_ok=True)
 
 failures = []
@@ -37,8 +37,8 @@ def check(condition, message):
         failures.append(message)
 
 
-# 订阅由真实的 mihomo 内核代理：PROXYSWITCH_CORE 指向内核程序时测完整的订阅流程，否则只检查没有内核时的提示。
-CORE = os.environ.get("PROXYSWITCH_CORE", "")
+# 订阅由真实的 mihomo 内核代理：PROXI_CORE 指向内核程序时测完整的订阅流程，否则只检查没有内核时的提示。
+CORE = os.environ.get("PROXI_CORE", "")
 
 # 模拟 GitHub 的最新发布接口：版本 99.0.0，附件是一段假的程序内容和它的 SHA256SUMS.txt。
 FAKE_PROGRAM = b"fake new version " * 4096
@@ -48,14 +48,14 @@ release_checks = {"count": 0}
 
 def start_release_server():
     checksum = hashlib.sha256(FAKE_PROGRAM).hexdigest()
-    sums = "".join(f"{checksum}  {name}\n" for name in ("ProxySwitch.exe", "ProxySwitch-arm64.exe")).encode()
+    sums = "".join(f"{checksum}  {name}\n" for name in ("Proxi.exe", "Proxi-arm64.exe")).encode()
 
     class Handler(http.server.BaseHTTPRequestHandler):
         def do_GET(self):
             base = f"http://127.0.0.1:{self.server.server_port}"
             if self.path == "/releases/latest":
                 release_checks["count"] += 1
-                assets = [{"name": name, "browser_download_url": f"{base}/download/program", "size": len(FAKE_PROGRAM)} for name in ("ProxySwitch.exe", "ProxySwitch-arm64.exe")]
+                assets = [{"name": name, "browser_download_url": f"{base}/download/program", "size": len(FAKE_PROGRAM)} for name in ("Proxi.exe", "Proxi-arm64.exe")]
                 assets.append({"name": "SHA256SUMS.txt", "browser_download_url": f"{base}/download/sums", "size": len(sums)})
                 body = json.dumps({"tag_name": "v99.0.0", "html_url": f"{base}/release", "published_at": "2026-10-01T00:00:00Z", "body": "- 新功能一\n- 修复二", "assets": assets}).encode()
             elif self.path == "/download/program":
@@ -104,18 +104,18 @@ def start_exit_ip_server():
 
 def start_server(directory):
     # 使用已有的公开地理数据时避免测试期间访问外网；没有提供时仍走正常下载流程。
-    geo = os.environ.get("PROXYSWITCH_GEO_DIR", "")
+    geo = os.environ.get("PROXI_GEO_DIR", "")
     if geo:
         os.makedirs(os.path.join(directory, "core"), exist_ok=True)
         for name in ("Country.mmdb", "GeoSite.dat"):
             shutil.copyfile(os.path.join(geo, name), os.path.join(directory, "core", name))
-    binary = os.path.join(directory, "proxyswitch-dev.exe" if os.name == "nt" else "proxyswitch-dev")
+    binary = os.path.join(directory, "proxi-dev.exe" if os.name == "nt" else "proxi-dev")
     subprocess.run(["go", "build", "-o", binary, "."], cwd=ROOT, check=True)
     arguments = [binary, "--dev-settings", f"--dir={directory}", f"--release-api={start_release_server()}", f"--exit-ip-api={start_exit_ip_server()}"]
     if CORE:
         arguments.append(f"--core={CORE}")
     # 去掉 OneDrive 的环境变量：配置同步的测试从「没有找到 OneDrive」开始，自己填同步文件夹。
-    environment = {key: value for key, value in os.environ.items() if not key.lower().startswith("onedrive") and key != "PROXYSWITCH_SYNC_DIR"}
+    environment = {key: value for key, value in os.environ.items() if not key.lower().startswith("onedrive") and key != "PROXI_SYNC_DIR"}
     process = subprocess.Popen(arguments, stdout=subprocess.PIPE, text=True, encoding="utf-8", env=environment)
     info = json.loads(process.stdout.readline())
     return process, info
@@ -201,14 +201,14 @@ def wait_until(predicate, timeout=8.0, interval=0.2):
 
 
 def main():
-    directory = tempfile.mkdtemp(prefix="proxyswitch-ui-")
+    directory = tempfile.mkdtemp(prefix="proxi-ui-")
     process, info = start_server(directory)
     api = Api(info["url"])
     config_path = info["config"]
     errors = []
     try:
         with sync_playwright() as playwright:
-            browser = playwright.chromium.launch(channel=os.environ.get("PROXYSWITCH_BROWSER_CHANNEL") or None)
+            browser = playwright.chromium.launch(channel=os.environ.get("PROXI_BROWSER_CHANNEL") or None)
             context = browser.new_context(viewport={"width": 1120, "height": 800}, device_scale_factor=1, locale="zh-CN", permissions=["clipboard-read", "clipboard-write"])
             page = context.new_page()
             page.on("pageerror", lambda error: errors.append(f"pageerror: {error}"))
@@ -230,7 +230,7 @@ def main():
 
 def run_experience_flows(page):
     """用独立配置模拟慢操作、保存排队和失败，检查用户能看到的反馈。"""
-    process, info = start_server(tempfile.mkdtemp(prefix="proxyswitch-experience-"))
+    process, info = start_server(tempfile.mkdtemp(prefix="proxi-experience-"))
     api = Api(info["url"])
     def request_arrived(queue):
         # 等待网络回调时继续处理浏览器事件，不能只用 Python 的 sleep。
@@ -272,6 +272,13 @@ def run_experience_flows(page):
         check(warning["title"] == "代理连接异常" and warning["nav"] == "代理连接异常", "开启设置与连接异常分别表达，主页面和侧栏状态一致")
 
         page.click("[data-page=general]")
+        page.click('button[data-setting="floating_widget.enabled"]')
+        check(wait_until(lambda: read_config(info["config"])["floating_widget"]["enabled"]), "悬浮网速按钮可以从设置开启")
+        check(page.locator(".floating-preview").count() == 1, "设置里提供悬浮按钮的外观预览")
+        page.click('[data-action="reset-floating"]')
+        check(wait_until(lambda: not read_config(info["config"])["floating_widget"]["positioned"]), "悬浮位置可以重置")
+        page.click('button[data-setting="floating_widget.enabled"]')
+        check(wait_until(lambda: not read_config(info["config"])["floating_widget"]["enabled"]), "悬浮按钮可以关闭")
         held = []
         page.route("**/api/config", lambda route: held.append(route))
         page.focus("select[data-setting=notify_seconds]")
@@ -350,7 +357,7 @@ def run_flows(page, api, info, config_path):
     page.goto(info["url"])
     page.wait_for_selector(".empty")
     check("token" not in page.url, "token 从地址栏移除")
-    check(page.title() == "ProxySwitch 设置", "窗口标题与程序查找设置窗口用的标题一致")
+    check(page.title() == "Proxi 设置", "窗口标题与程序查找设置窗口用的标题一致")
     check(page.locator(".choice").count() == 4, "空状态提供四种添加方式（含机场订阅）")
     shot(page, "01_empty")
 
@@ -550,7 +557,7 @@ def run_flows(page, api, info, config_path):
     check(page.get_attribute("button.switch[data-setting=url_links]", "aria-checked") == "true", "网页链接默认开启")
     check("现在由「clash-verge」处理" in page.inner_text(".page"), "说明 clash:// 链接现在由哪个程序处理")
     page.click("[data-action=take-over-clash-links]")
-    check(wait_until(lambda: "由 ProxySwitch 处理" in page.inner_text(".page") and page.locator("[data-action=take-over-clash-links]").count() == 0), "改由 ProxySwitch 处理一键导入")
+    check(wait_until(lambda: "由 Proxi 处理" in page.inner_text(".page") and page.locator("[data-action=take-over-clash-links]").count() == 0), "改由 Proxi 处理一键导入")
     shot(page, "07_system")
     page.click("button.switch[data-setting=url_links]")
     check(wait_until(lambda: read_config(config_path)["url_links"] is False), "关闭网页链接")
@@ -785,7 +792,7 @@ def run_flows(page, api, info, config_path):
     check("已用 8.0 GB / 100 GB" in page.inner_text(".dialog [data-check-result]"), "检查订阅显示流量和到期时间")
     check(page.input_value(".dialog [data-field=name]") == "测试机场", "没填名字时用机场给的名字")
     # 本机的订阅文件：file:// 地址也能检查；不完整的路径提示写法。
-    subscription_file = os.path.join(tempfile.mkdtemp(prefix="proxyswitch-sub-"), "我的节点.yaml")
+    subscription_file = os.path.join(tempfile.mkdtemp(prefix="proxi-sub-"), "我的节点.yaml")
     with open(subscription_file, "wb") as output:
         output.write(urllib.request.urlopen(subscription_url, timeout=5).read())
     page.fill(".dialog [data-field=subscription]", "sub.yaml")
@@ -1237,7 +1244,7 @@ def run_flows(page, api, info, config_path):
     page.evaluate("document.getElementById('toasts').replaceChildren()")
     shot(page, "13_diagnose")
     page.click("[data-action=diagnose-action][data-kind=copy_report]")
-    check(wait_until(lambda: "ProxySwitch 网址诊断" in page.evaluate("navigator.clipboard.readText()")), "复制诊断报告")
+    check(wait_until(lambda: "Proxi 网址诊断" in page.evaluate("navigator.clipboard.readText()")), "复制诊断报告")
     serial = page.evaluate("app.diagnoseJob.serial")
     page.click("[data-action=diagnose-action][data-kind=flush_dns]")
     check(wait_until(lambda: api.call("GET", "/api/dev/dns")["flushes"] == 1 and "已清除 DNS 缓存" in page.inner_text("#toasts")), "结论里可以清除 DNS 缓存")
@@ -1326,13 +1333,13 @@ def write_sync_file(folder, device, config):
 
 
 def run_sync_flows(page, api, config_path):
-    folder = os.path.join(tempfile.mkdtemp(prefix="proxyswitch-sync-"), "ProxySwitch")
+    folder = os.path.join(tempfile.mkdtemp(prefix="proxi-sync-"), "Proxi")
     page.click("[data-page=sync]")
     page.wait_for_selector("#sync-folder")
     check(page.locator(".nav-item[data-page=sync]").count() == 1 and "没有找到 OneDrive" in page.inner_text("#page"), "配置同步页：没有 OneDrive 时提示填文件夹")
 
     # 填了相对路径：不开启，提示原因。
-    page.fill("#sync-folder", "ProxySwitch")
+    page.fill("#sync-folder", "Proxi")
     page.click("button.switch[data-action=sync-toggle]")
     check(wait_until(lambda: "完整的路径" in page.inner_text("#toasts")), "同步文件夹填相对路径时提示")
     check(not read_config(config_path)["sync"]["enabled"], "填错时不开启同步")

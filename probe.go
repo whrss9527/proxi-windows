@@ -249,7 +249,7 @@ func probeHttpProxy(address string, verifier *tunnelVerifier, timeout time.Durat
 	deadline := time.Now().Add(timeout)
 	_ = connection.SetDeadline(deadline)
 	target := net.JoinHostPort("127.0.0.1", strconv.Itoa(verifier.port()))
-	if _, err := fmt.Fprintf(connection, "CONNECT %s HTTP/1.1\r\nHost: %s\r\nUser-Agent: ProxySwitch\r\n\r\n", target, target); err != nil {
+	if _, err := fmt.Fprintf(connection, "CONNECT %s HTTP/1.1\r\nHost: %s\r\nUser-Agent: Proxi\r\n\r\n", target, target); err != nil {
 		return false, false
 	}
 	response, err := http.ReadResponse(bufio.NewReader(connection), &http.Request{Method: http.MethodConnect})

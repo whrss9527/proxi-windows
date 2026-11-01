@@ -63,7 +63,7 @@ var groupTypeAliases = map[string]string{
 	"static": groupSelect, "available": groupFallback,
 }
 
-// reservedGroupNames 是内核和 ProxySwitch 自己用的名字，不能拿来当组名。
+// reservedGroupNames 是内核和 Proxi 自己用的名字，不能拿来当组名。
 var reservedGroupNames = []string{"DIRECT", "REJECT", "REJECT-DROP", "PASS", "GLOBAL", "COMPATIBLE", coreTopGroup, coreUpstreamProxy, coreShareListener, groupMemberAuto}
 
 func normalizePolicyGroup(group *PolicyGroup) {
@@ -255,7 +255,7 @@ func validateRulePolicy(policy string, groups []string) error {
 	return nil
 }
 
-// corePolicyTarget 是去向在内核配置里的名字。指向的策略组已经不存在时退回 ProxySwitch（走节点），
+// corePolicyTarget 是去向在内核配置里的名字。指向的策略组已经不存在时退回 Proxi（走节点），
 // 免得内核因为找不到策略拒绝整个配置。
 func corePolicyTarget(policy string, groups []string) string {
 	if name, ok := ruleTargetGroup(policy); ok {
@@ -283,7 +283,7 @@ func corePolicyGroup(group PolicyGroup, source, testUrl string) coreGroup {
 	return result
 }
 
-// coreGroupMember 是手动选择的组选中的成员在内核里的名字：空是跟随节点（ProxySwitch 组）。
+// coreGroupMember 是手动选择的组选中的成员在内核里的名字：空是跟随节点（Proxi 组）。
 func coreGroupMember(node, source string) string {
 	switch node {
 	case "":

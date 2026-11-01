@@ -192,7 +192,7 @@ func (engine *Engine) SetShareEnabled(enabled bool) error {
 		return nil
 	}
 	if enabled && engine.core == nil {
-		return errors.New("局域网共享需要 ProxySwitch 保持运行，请先打开 ProxySwitch")
+		return errors.New("局域网共享需要 Proxi 保持运行，请先打开 Proxi")
 	}
 	if enabled && !fileExists(engine.coreBinary()) {
 		if engine.config.Core.Path != "" {

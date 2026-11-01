@@ -22,7 +22,7 @@ const (
 	esContinuous     = 0x80000000
 	esSystemRequired = 0x00000001
 
-	shareFirewallRule    = "ProxySwitch 局域网共享"
+	shareFirewallRule    = "Proxi 局域网共享"
 	shareFirewallTimeout = time.Minute
 )
 

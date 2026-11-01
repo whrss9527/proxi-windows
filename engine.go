@@ -53,7 +53,7 @@ type Notice struct {
 	Tag     string
 }
 
-// NoticeAction 是通知上的按钮：Label 是按钮上的字，Link 是点了以后打开的 proxyswitch:// 链接。
+// NoticeAction 是通知上的按钮：Label 是按钮上的字，Link 是点了以后打开的 proxi:// 链接。
 type NoticeAction struct {
 	Label string
 	Link  string

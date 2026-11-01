@@ -109,7 +109,7 @@ func TestSettingsGuard(t *testing.T) {
 	}
 	body, _ := io.ReadAll(page.Body)
 	page.Body.Close()
-	if page.StatusCode != http.StatusOK || !strings.Contains(string(body), "<title>ProxySwitch 设置</title>") {
+	if page.StatusCode != http.StatusOK || !strings.Contains(string(body), "<title>Proxi 设置</title>") {
 		t.Errorf("应能打开页面，得到 %d", page.StatusCode)
 	}
 	if policy := page.Header.Get("Content-Security-Policy"); !strings.Contains(policy, "script-src 'self'") || !strings.Contains(policy, "font-src 'self'") {
