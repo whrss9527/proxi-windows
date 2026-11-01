@@ -97,6 +97,12 @@ func (backend *devBackend) locked(action func() error) error {
 func (backend *devBackend) State() SettingsState {
 	backend.mutex.Lock()
 	state := backend.engine.settingsState()
+	// 模拟数据也遵守按需显示：未启用 Wi-Fi 规则时，不把预置的 Wi-Fi 名称交给页面。
+	state.Network.WifiNameRead = shouldReadWifiName(backend.engine.Config())
+	if !state.Network.WifiNameRead {
+		state.Network.Ssids, state.Network.SsidError = []string{}, ""
+		state.AutoSwitch.Network = state.Network.Describe()
+	}
 	state.Platform = "dev"
 	state.Autostart = backend.autostart
 	state.Accent = "#0067c0"

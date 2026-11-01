@@ -384,6 +384,7 @@ func (service *subscriptionService) fillState(state *SettingsState) {
 	state.Sync = service.configSync.Info(state.Config)
 	status := service.core.Status()
 	state.Core.Running, state.Core.Error = status.Running, status.Error
+	state.Core.Starting = status.Starting
 	state.Core.Downloadable = coreDownloadable()
 	state.Core.Installing = service.CoreInstalling()
 	state.Core.Share = status.Share
@@ -554,13 +555,27 @@ func validateGeoData(name string, data []byte) error {
 }
 
 func writeFileAtomically(path string, data []byte) error {
-	temporary := path + ".download"
-	if err := os.WriteFile(temporary, data, 0o644); err != nil {
+	file, err := os.CreateTemp(filepath.Dir(path), "."+filepath.Base(path)+"-*.tmp")
+	if err != nil {
 		return err
 	}
-	if err := os.Rename(temporary, path); err != nil {
-		_ = os.Remove(temporary)
+	temporary := file.Name()
+	defer os.Remove(temporary)
+	if _, err = file.Write(data); err != nil {
+		_ = file.Close()
 		return err
 	}
-	return nil
+	if err = file.Close(); err != nil {
+		return err
+	}
+	// Windows 上编辑器和同步程序会短暂占用目标文件。重试完整替换，绝不截断原文件。
+	for attempt := 0; attempt < 8; attempt++ {
+		if err = os.Rename(temporary, path); err == nil {
+			return nil
+		}
+		if attempt < 7 {
+			time.Sleep(10 * time.Millisecond)
+		}
+	}
+	return fmt.Errorf("替换文件失败，原文件已保留：%w", err)
 }

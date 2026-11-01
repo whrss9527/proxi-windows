@@ -148,6 +148,7 @@ type CoreInfo struct {
 	InstalledVersion string           `json:"installed_version,omitempty"`
 	Port             int              `json:"port"`
 	Running          bool             `json:"running"`
+	Starting         bool             `json:"starting"`
 	Error            string           `json:"error,omitempty"`
 	GeoReady         bool             `json:"geo_ready"`
 	Downloadable     bool             `json:"downloadable"`

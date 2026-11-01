@@ -288,16 +288,8 @@ func writeSyncFile(folder string, file syncFile) error {
 		return fmt.Errorf("建不了同步文件夹：%v", err)
 	}
 	path := filepath.Join(folder, syncFileName)
-	temporary := filepath.Join(folder, "."+syncFileName+".tmp")
-	if err := os.WriteFile(temporary, append(data, '\n'), 0o644); err != nil {
+	if err := writeFileAtomically(path, append(data, '\n')); err != nil {
 		return fmt.Errorf("写不了同步文件：%v", err)
-	}
-	if err := os.Rename(temporary, path); err != nil {
-		_ = os.Remove(temporary)
-		// 同步程序正开着这个文件时 Windows 上改名会失败，退回直接覆盖。
-		if err := os.WriteFile(path, append(data, '\n'), 0o644); err != nil {
-			return fmt.Errorf("写不了同步文件：%v", err)
-		}
 	}
 	return nil
 }

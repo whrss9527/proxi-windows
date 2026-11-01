@@ -14,6 +14,7 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
+	"time"
 	"unicode/utf8"
 )
 
@@ -101,6 +102,7 @@ type Config struct {
 	HealthCheck     string        `json:"health_check"`
 	TrayClick       string        `json:"tray_click"`
 	TrayDoubleClick string        `json:"tray_double_click"`
+	TrayIcon        string        `json:"tray_icon"`
 	Theme           string        `json:"theme"`
 	SettingsWindow  string        `json:"settings_window"`
 	TestUrl         string        `json:"test_url"`
@@ -132,6 +134,7 @@ func defaultConfig() *Config {
 		HealthCheck:     "notify",
 		TrayClick:       "toggle",
 		TrayDoubleClick: "none",
+		TrayIcon:        "brand",
 		Theme:           "system",
 		SettingsWindow:  "app",
 		TestUrl:         defaultTestUrl,
@@ -178,6 +181,8 @@ const defaultConfigText = `// ProxySwitch 配置文件。推荐在托盘菜单�
   "tray_click": "toggle",
   // 双击托盘图标：none 不响应 / settings 打开设置 / toggle 开关代理（设置后单击会等双击判定，稍有延迟）
   "tray_double_click": "none",
+  // 托盘图标：brand 应用标识与状态角标 / toggle 按配置颜色显示开关
+  "tray_icon": "brand",
 
   // 设置界面主题：system 跟随系统 / light 浅色 / dark 深色
   "theme": "system",
@@ -424,6 +429,7 @@ func normalizeConfig(config *Config) {
 	config.HealthCheck = lowerTrim(config.HealthCheck, "notify")
 	config.TrayClick = lowerTrim(config.TrayClick, "toggle")
 	config.TrayDoubleClick = lowerTrim(config.TrayDoubleClick, "none")
+	config.TrayIcon = lowerTrim(config.TrayIcon, "brand")
 	config.Theme = lowerTrim(config.Theme, "system")
 	config.SettingsWindow = lowerTrim(config.SettingsWindow, "app")
 	config.SpeedDisplay = lowerTrim(config.SpeedDisplay, speedSystem)
@@ -574,6 +580,7 @@ func validateConfig(config *Config) error {
 		{"health_check", config.HealthCheck, []string{"notify", "auto_off", "off"}},
 		{"tray_click", config.TrayClick, []string{"toggle", "settings", "menu"}},
 		{"tray_double_click", config.TrayDoubleClick, []string{"none", "settings", "toggle"}},
+		{"tray_icon", config.TrayIcon, []string{"brand", "toggle"}},
 		{"theme", config.Theme, []string{"system", "light", "dark"}},
 		{"settings_window", config.SettingsWindow, []string{"app", "browser"}},
 		{"speed_display", config.SpeedDisplay, []string{speedSystem, speedCore, speedNone}},
@@ -746,6 +753,11 @@ func containsString(list []string, value string) bool {
 // loadConfig 读取配置文件；文件不存在时写入默认配置并返回 created=true。
 func loadConfig(path string) (config *Config, created bool, err error) {
 	data, err := os.ReadFile(path)
+	// Windows 完整替换文件的极短窗口内，另一个读取者可能暂时遇到拒绝访问。
+	for attempt := 0; attempt < 7 && os.IsPermission(err); attempt++ {
+		time.Sleep(10 * time.Millisecond)
+		data, err = os.ReadFile(path)
+	}
 	if os.IsNotExist(err) {
 		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 			return nil, false, err
@@ -782,16 +794,7 @@ func writeConfigFile(path string, config *Config) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return err
 	}
-	temporary := path + ".tmp"
-	if err := os.WriteFile(temporary, data, 0o644); err != nil {
-		return err
-	}
-	if err := os.Rename(temporary, path); err != nil {
-		_ = os.Remove(temporary)
-		// 目标文件被编辑器以独占方式打开时 Windows 上改名会失败，退回直接覆盖。
-		return os.WriteFile(path, data, 0o644)
-	}
-	return nil
+	return writeFileAtomically(path, data)
 }
 
 // State 是运行状态，与用户手写的配置文件分开存放。

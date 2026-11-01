@@ -272,12 +272,14 @@ func TestCoreWithMihomo(t *testing.T) {
 	}
 
 	// 内核意外退出后自动重启。
-	if process, err := os.FindProcess(corePid(core)); err == nil {
+	killedPid := corePid(core)
+	if process, err := os.FindProcess(killedPid); err == nil {
 		_ = process.Kill()
 	}
 	deadline := time.Now().Add(15 * time.Second)
 	for time.Now().Before(deadline) {
-		if status := core.Status(); status.Running && core.request(http.MethodGet, "/version", nil, nil, time.Second) == nil {
+		// Windows 的 Kill 返回时旧进程可能尚未退出，必须等新的进程，不能把旧接口当成恢复完成。
+		if status := core.Status(); status.Running && corePid(core) != killedPid && core.request(http.MethodGet, "/version", nil, nil, time.Second) == nil {
 			break
 		}
 		time.Sleep(100 * time.Millisecond)

@@ -169,6 +169,9 @@ function coreNotice(purpose = "使用订阅") {
       这个版本不能在程序里下载内核，请在「常规」里填写本机 mihomo 程序的位置。
       <div class="infobar-actions"><button class="button" data-action="goto" data-page="general">填写内核位置</button></div></div></div>`;
   }
+  if (core.starting) {
+    return html`<div class="infobar info"><span class="spinner"></span><div class="infobar-body"><div class="infobar-title">正在准备代理连接</div>配置和节点就绪后自动恢复连接。</div></div>`;
+  }
   if (core.error) {
     return html`<div class="infobar warning">${icon("warning")}<div class="infobar-body"><div class="infobar-title">代理内核出错</div><div style="white-space:pre-wrap">${core.error}</div></div></div>`;
   }
@@ -765,7 +768,7 @@ function policyGroupsView() {
 function emptyView() {
   return html`
     <div class="card empty">
-      ${logoSvg(app.state.palette[0], true, "empty-logo")}
+      ${brandLogo("empty-logo")}
       <h2>添加第一个代理配置</h2>
       <p>ProxySwitch 用来一键开关 Windows 的代理。先告诉它代理的地址，之后单击任务栏右下角的托盘图标就能开关。</p>
       <div class="choices">
@@ -1397,7 +1400,9 @@ function networkPage() {
     </div>`);
   }
 
-  const matchBadge = !network.ssids.length && !network.adapters.length
+  const matchBadge = !autoSwitch.enabled
+    ? html`<span class="badge">自动切换已关闭</span>`
+    : !network.ssids.length && !network.adapters.length
     ? html`<span class="badge">未连接网络</span>`
     : status.match_index >= 0
       ? html`<span class="badge accent">匹配第 ${status.match_index + 1} 条规则</span>`
@@ -1406,7 +1411,7 @@ function networkPage() {
   const rules = autoSwitch.rules.map((rule, index) => {
     const actionValue = rule.action === "off" ? "off" : `use:${rule.profile}`;
     return html`
-      <div class="card rule ${status.match_index === index ? "matched" : ""}">
+      <div class="card rule ${autoSwitch.enabled && status.match_index === index ? "matched" : ""}">
         <span class="index">${index + 1}</span>
         <span class="word">连上</span>
         <select class="select" data-rule="${index}" data-rule-field="match" aria-label="条件">${Object.entries(matchLabels).map(([value, label]) => html`<option value="${value}" ${rule.match === value ? raw("selected") : ""}>${label}</option>`)}</select>
@@ -1433,6 +1438,11 @@ function networkPage() {
         control: html`<span class="switch-label">${autoSwitch.enabled ? "开" : "关"}</span>${switchButton({ checked: autoSwitch.enabled, setting: "auto_switch.enabled", label: "按网络自动切换" })}`,
       })}
     </div>
+    <div class="network-privacy" id="network-privacy" data-reading="${Boolean(network.wifi_name_read)}">
+      ${icon("shield")}
+      <div><strong>${network.wifi_name_read ? "正在按规则读取 Wi-Fi 名称" : "Wi-Fi 名称未读取"}</strong>
+      <p>${network.wifi_name_read ? "Wi-Fi 名称用于匹配你设置的规则，Windows 可能显示位置访问提示。关闭自动切换或删除 Wi-Fi 名称条件后停止读取。" : "关闭自动切换，或只用网关、网卡和 DNS 后缀条件时，不读取 Wi-Fi 名称，也不会因此触发位置访问。"}</p></div>
+    </div>
     ${profiles.length === 0 ? html`<div class="infobar info" style="margin-top:12px">${icon("info")}<div class="infobar-body">先在「代理」页添加代理配置，才能设置规则。<div class="infobar-actions"><button class="button" data-action="goto" data-page="proxies">去添加</button></div></div></div>` : ""}
 
     <div class="section-title">当前网络</div>
@@ -1458,6 +1468,7 @@ function networkPage() {
     </div>
     <div style="display:flex;align-items:center;gap:12px;margin-top:16px;flex-wrap:wrap">
       <button class="button" data-action="apply-auto-switch" ${autoSwitch.rules.length === 0 && autoSwitch.default_action === "keep" ? raw("disabled") : ""}>${icon("play")}按当前网络立即应用</button>
+      ${autoSwitch.rules.some((rule) => rule.match === "ssid") ? html`<span class="caption muted">立即应用会读取一次 Wi-Fi 名称。</span>` : ""}
       ${status.result ? html`<span class="caption muted">${icon("clock")} 最近一次：${status.time ? `${status.time} · ` : ""}${status.result}</span>` : ""}
     </div>`;
 }
@@ -1631,6 +1642,15 @@ function generalPage() {
     <div class="section-title">外观</div>
     <div class="card card-group">
       ${settingCard({ iconName: "palette", title: "设置界面的颜色", control: html`<div class="segmented" role="group" aria-label="主题">${[["system", "跟随系统"], ["light", "浅色"], ["dark", "深色"]].map(([value, label]) => html`<button type="button" data-action="set-theme" data-value="${value}" aria-pressed="${config.theme === value}">${label}</button>`)}</div>` })}
+      ${settingCard({ iconName: "palette", title: "托盘图标", description: "应用标识始终不变，状态角标显示开关和配置颜色；也可以保留开关样式。", note: html`
+        <div class="tray-icon-choices" role="group" aria-label="托盘图标样式">
+          ${[["brand", "应用图标", "固定标识与状态角标"], ["toggle", "开关", "按配置颜色显示状态"]].map(([value, label, caption]) => html`
+            <button type="button" class="tray-icon-choice" data-action="set-tray-icon" data-value="${value}" aria-pressed="${(config.tray_icon || "brand") === value}">
+              <span class="tray-icon-samples" aria-hidden="true">${trayPreview(value, true, (findProfile(app.state.status.profile) || {}).color || app.state.palette[1])}${trayPreview(value, false, grayTrack)}</span>
+              <span><strong>${label}</strong><span class="caption muted">${caption}</span></span>
+              ${icon("check")}
+            </button>`)}
+        </div>` })}
       ${settingCard({ iconName: "window", title: "设置界面的打开方式", description: "独立窗口需要系统里有 Edge 或 Chrome（Windows 10 / 11 都自带 Edge）", control: select("settings_window", config.settings_window, [["app", "独立窗口"], ["browser", "默认浏览器"]]) })}
     </div>
 
@@ -1793,6 +1813,8 @@ function coreSettingsView(config) {
   let status = html`<span class="badge">没有运行</span>`;
   if (core.running) {
     status = html`<span class="badge success">运行中</span>`;
+  } else if (core.starting) {
+    status = html`<span class="badge">正在准备</span>`;
   } else if (core.error) {
     status = html`<span class="badge warning" title="${core.error}">出错</span>`;
   } else if (!core.installed) {
@@ -2008,7 +2030,7 @@ function aboutPage() {
     <div class="about-top">
       <div class="about-main">
         <div class="card about-hero">
-          ${logoSvg(app.state.palette[1] || "#2563eb", true)}
+          ${brandLogo()}
           <div style="flex:1">
             <div class="about-name">ProxySwitch</div>
             <div class="muted">快捷切换 Windows 代理 · 版本 <span class="numeric">${app.state.version}</span>${app.state.platform === "dev" ? html` <span class="badge warning">开发模式</span>` : ""}</div>

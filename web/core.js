@@ -135,6 +135,16 @@ function logoSvg(color, on, className = "brand-logo") {
   return raw(`<svg class="${className}" viewBox="0 0 32 32" aria-hidden="true"><rect x="1" y="6" width="30" height="20" rx="10" fill="${escapeHtml(color)}"/><circle cx="${knob}" cy="16" r="7" fill="#fff"/></svg>`);
 }
 
+// 应用身份固定不变，开关和配置状态用单独的控件或角标显示。
+function brandLogo(className = "brand-logo") {
+  return html`<img class="${className}" src="/assets/brand.svg" alt="" aria-hidden="true">`;
+}
+
+function trayPreview(mode, on, color) {
+  if (mode === "toggle") return logoSvg(on ? color : grayTrack, on, "tray-preview-toggle");
+  return html`<span class="tray-preview-brand">${brandLogo()}<span class="tray-preview-badge ${on ? "on" : "off"}" style="--badge:${on ? color : grayTrack}">${on ? "✓" : "−"}</span></span>`;
+}
+
 // ---------- 接口 ----------
 
 const tokenKey = "proxyswitch-token";
@@ -488,11 +498,9 @@ function applyAccent(hex, theme) {
 }
 
 // setFavicon 让窗口图标跟随代理状态。
-function setFavicon(color, on) {
-  const knob = on ? 21 : 11;
-  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect x='1' y='6' width='30' height='20' rx='10' fill='${color}'/><circle cx='${knob}' cy='16' r='7' fill='white'/></svg>`;
+function setFavicon() {
   const link = document.getElementById("favicon");
-  const href = "data:image/svg+xml," + encodeURIComponent(svg);
+  const href = "/assets/brand.svg";
   if (link && link.getAttribute("href") !== href) {
     link.setAttribute("href", href);
   }

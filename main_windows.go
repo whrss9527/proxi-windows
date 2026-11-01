@@ -46,6 +46,10 @@ const usageText = `用法：
 托盘程序在运行时，命令交给它执行，托盘图标会立即更新。`
 
 func main() {
+	// 开发预览只使用内存里的系统设置，在解析真实路径和创建托盘之前分流。
+	if len(os.Args) > 1 && os.Args[1] == "--dev-settings" {
+		os.Exit(runDevSettings(os.Args[2:]))
+	}
 	paths := resolvePaths()
 	setupLogger(paths.Log)
 	autostarted := false
