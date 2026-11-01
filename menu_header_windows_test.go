@@ -50,8 +50,8 @@ func TestMenuHeaderDisabledButKeepsFullText(t *testing.T) {
 			if got := syscall.UTF16ToString(buffer); got == "" || position == 1 && got != "代理已开启：公司 & 内网" {
 				t.Errorf("原生菜单应保留可读取的完整文字，得到 %q", got)
 			}
-		} else if info.state&3 != 0 || info.kind&mftOwnerDraw != 0 {
-			t.Error("操作项应继续使用原生菜单，并允许点击和键盘选择")
+		} else if info.state&3 != 0 || info.kind&mftOwnerDraw == 0 || info.itemData == 0 {
+			t.Error("自绘操作项仍应允许点击和键盘选择")
 		}
 	}
 }
