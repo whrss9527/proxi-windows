@@ -1638,7 +1638,7 @@ function generalPage() {
       ${settingCard({ iconName: "mouse", title: "单击托盘图标", control: select("tray_click", config.tray_click, [["toggle", "开关代理"], ["settings", "打开设置"], ["menu", "显示菜单"]]) })}
       ${settingCard({ iconName: "mouse", title: "双击托盘图标", description: config.tray_double_click !== "none" ? "设置了双击后，单击要稍等一下才生效" : "", control: select("tray_double_click", config.tray_double_click, [["none", "不响应"], ["settings", "打开设置"], ["toggle", "开关代理"]]) })}
       ${settingCard({ iconName: "gauge", title: "实时网速", description: "显示在托盘图标的提示和「代理」页的开关卡片上，每两秒更新一次", control: select("speed_display", config.speed_display, [["system", "系统网络总速度"], ["core", "只算内置代理"], ["none", "不显示"]]) })}
-      ${settingCard({ iconName: "gauge", title: "悬浮网速按钮", description: "左侧为 Proxi 和连接状态，右侧显示电脑总下载与上传速度。单击打开设置，拖动移动，右键打开菜单", control: switchButton({ checked: config.floating_widget.enabled, setting: "floating_widget.enabled", label: "悬浮网速按钮" }), note: html`<div class="floating-preview" aria-label="悬浮按钮外观预览">${brandLogo("floating-preview-logo")}<span>↓ 下载速度<br>↑ 上传速度</span></div>${config.floating_widget.enabled ? html`<button class="button subtle" data-action="reset-floating">重置位置</button>` : ""}` })}
+      ${settingCard({ iconName: "gauge", title: "悬浮网速按钮", description: "左侧为 Proxi 和连接状态，右侧上方为上传、下方为下载。单击打开设置，拖动移动，右键打开菜单", control: switchButton({ checked: config.floating_widget.enabled, setting: "floating_widget.enabled", label: "悬浮网速按钮" }), note: html`<div class="floating-preview" aria-label="悬浮按钮外观预览">${brandLogo("floating-preview-logo")}<span>↑ 上传速度<br>↓ 下载速度</span></div>${config.floating_widget.enabled ? html`<button class="button subtle" data-action="reset-floating">重置位置</button>` : ""}` })}
     </div>
 
     <div class="section-title">通知</div>
