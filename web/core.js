@@ -497,10 +497,10 @@ function applyAccent(hex, theme) {
   root.setProperty("--on-accent", "#ffffff");
 }
 
-// setFavicon 让窗口图标跟随代理状态。
+// setFavicon 保持固定的应用图标，窗口图标不随代理状态改变。
 function setFavicon() {
   const link = document.getElementById("favicon");
-  const href = "/assets/brand.svg";
+  const href = "/assets/brand.ico";
   if (link && link.getAttribute("href") !== href) {
     link.setAttribute("href", href);
   }
