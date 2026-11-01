@@ -376,7 +376,7 @@ function renderNav() {
   };
   setHtml(nav, html`
     <div class="brand">
-      ${logoSvg(app.state.status.state === "off" ? grayTrack : (findProfile(app.state.status.profile) || {}).color || amberTrack, app.state.status.state !== "off")}
+      ${brandLogo()}
       <div class="brand-text"><div class="brand-name">ProxySwitch</div><div class="brand-version">版本 ${app.state.version}</div></div>
     </div>
     ${pages.map((page) => html`
@@ -1392,7 +1392,7 @@ function renameReferences(config, oldName, newName) {
 }
 
 // generalSettingKeys 是「常规」页上「恢复默认设置」会恢复的设置。
-const generalSettingKeys = ["startup_action", "disable_on_exit", "hotkey", "profile_hotkeys", "tray_click", "tray_double_click", "speed_display", "notify_level", "notify_seconds", "off_mode", "guard_proxy", "health_check", "test_url", "theme", "settings_window", "editor"];
+const generalSettingKeys = ["startup_action", "disable_on_exit", "hotkey", "profile_hotkeys", "tray_click", "tray_double_click", "tray_icon", "speed_display", "notify_level", "notify_seconds", "off_mode", "guard_proxy", "health_check", "test_url", "theme", "settings_window", "editor"];
 
 async function importConfig() {
   const file = await pickFile(".json,.jsonc,application/json");
@@ -1540,6 +1540,7 @@ const actions = {
   },
   "clear-hotkey": () => saveConfig((config) => (config.hotkey = ""), "已清除快捷键"),
   "set-theme": (element) => saveConfig((config) => (config.theme = element.dataset.value)),
+  "set-tray-icon": (element) => saveConfig((config) => (config.tray_icon = element.dataset.value)),
   "reset-test-url": () => saveConfig((config) => (config.test_url = app.state.defaults.test_url)),
   "open-config-dir": () => api("POST", "/api/open/config-dir").catch((error) => toast(error.message, "danger", "无法打开")),
   "open-config-file": () => api("POST", "/api/open/config-file").then(() => toast("保存后几秒内自动生效", "info", "已用编辑器打开配置文件")).catch((error) => toast(error.message, "danger", "无法打开")),
@@ -1980,7 +1981,7 @@ connectionLost = (reason) => {
     title = "正在重新启动";
     message = "新版本启动后会打开新的设置窗口，可以关闭这个窗口。";
   }
-  setHtml(blocker, html`<div class="card">${logoSvg(grayTrack, false, "empty-logo")}<h2>${title}</h2><p class="muted">${message}</p><button class="button accent" data-close-window>关闭窗口</button></div>`);
+  setHtml(blocker, html`<div class="card">${brandLogo("empty-logo")}<h2>${title}</h2><p class="muted">${message}</p><button class="button accent" data-close-window>关闭窗口</button></div>`);
   blocker.querySelector("[data-close-window]").addEventListener("click", () => window.close());
   document.body.appendChild(blocker);
 };

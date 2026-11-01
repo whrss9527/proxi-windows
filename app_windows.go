@@ -180,6 +180,10 @@ func (app *App) applyUiConfig() {
 	if config == nil {
 		return
 	}
+	if !shouldReadWifiName(config) {
+		// 保存关闭设置后立即清掉旧名称，不等待下一轮网络检查再更新界面。
+		app.engine.network.Ssids, app.engine.network.SsidError, app.engine.network.WifiNameRead = nil, "", false
+	}
 	app.tray.DoubleClickEnabled = config.TrayDoubleClick != "none"
 	app.registerHotkeys(config)
 	app.registerLinks(config.UrlLinks)
@@ -286,15 +290,19 @@ func (app *App) iconStyleFor(status Status) (string, string) {
 
 func (app *App) iconFor(status Status) uintptr {
 	state, color := app.iconStyleFor(status)
+	mode := "brand"
+	if config := app.engine.Config(); config != nil {
+		mode = config.TrayIcon
+	}
 	size := systemMetric(smCxSmIcon)
 	if size <= 0 {
 		size = 16 * systemDpi() / 96
 	}
-	key := fmt.Sprintf("%s|%s|%d", state, color, size)
+	key := fmt.Sprintf("%s|%s|%s|%d", mode, state, color, size)
 	if icon, found := app.icons[key]; found {
 		return icon
 	}
-	icon, err := createIcon(renderToggleIcon(size, trayIconStyle(state, color)))
+	icon, err := createIcon(renderTrayIcon(size, mode, state, color))
 	if err != nil {
 		slog.Warn("创建托盘图标失败", "err", err)
 		return 0
@@ -486,6 +494,7 @@ func (app *App) menuItems() []MenuItem {
 	config := app.engine.Config()
 	if config == nil {
 		return []MenuItem{
+			{Text: appName, Disabled: true, Bitmap: app.menuBrand()},
 			{Id: menuHeader, Text: "配置文件有错误", Disabled: true},
 			separator,
 			{Id: menuEditConfig, Text: "编辑配置文件..."},
@@ -500,7 +509,7 @@ func (app *App) menuItems() []MenuItem {
 		toggleKey = "\t" + app.hotkeys.Toggle
 	}
 	clickToggles := config.TrayClick == "toggle"
-	var items []MenuItem
+	items := []MenuItem{{Text: appName, Disabled: true, Bitmap: app.menuBrand()}}
 	switch status.State {
 	case statusOn:
 		header := "代理已开启：" + escapeMenuText(status.Profile.Name)
@@ -576,6 +585,24 @@ func (app *App) menuItems() []MenuItem {
 		MenuItem{Id: menuExit, Text: "退出"},
 	)
 	return items
+}
+
+// 菜单标题始终用应用图标，配置项继续用配置颜色，避免把身份标识和代理开关混在一起。
+func (app *App) menuBrand() uintptr {
+	size := systemMetric(smCxMenuCheck)
+	if size <= 0 {
+		size = 16
+	}
+	key := fmt.Sprintf("brand|%d", size)
+	if bitmap, ok := app.menuBitmaps[key]; ok {
+		return bitmap
+	}
+	bitmap, err := createMenuBitmap(renderBrandIcon(size))
+	if err != nil {
+		return 0
+	}
+	app.menuBitmaps[key] = bitmap
+	return bitmap
 }
 
 // subscriptionMenu 是订阅配置的子菜单：没开启时可以直接开启；选择节点（自动选择或某个节点，显示最近测得的延迟）；
@@ -1092,11 +1119,21 @@ func (app *App) openSettingsWith(page, action, argument string) {
 
 func (app *App) watchNetwork() {
 	for {
-		info := readNetworkInfo()
-		_ = app.tray.RunOnUi(func() {
+		includeWifi := false
+		if err := app.tray.RunOnUi(func() { includeWifi = shouldReadWifiName(app.engine.Config()) }); err != nil {
+			return
+		}
+		info := readNetworkInfo(includeWifi)
+		if err := app.tray.RunOnUi(func() {
+			// 查询期间关闭了自动切换时，立即丢弃这次的 Wi-Fi 名称，不再留在设置页上。
+			if !shouldReadWifiName(app.engine.Config()) {
+				info.Ssids, info.SsidError, info.WifiNameRead = nil, "", false
+			}
 			app.engine.UpdateNetwork(info)
 			app.refresh()
-		})
+		}); err != nil {
+			return
+		}
 		time.Sleep(networkInterval)
 	}
 }
@@ -1179,7 +1216,17 @@ func (app *App) UseProfile(name string) error {
 }
 
 func (app *App) ApplyAutoSwitch() error {
-	return app.onUi(app.engine.ApplyAutoSwitch)
+	includeWifi := false
+	if err := app.tray.RunOnUi(func() {
+		if config := app.engine.Config(); config != nil {
+			includeWifi = config.AutoSwitch.needsWifiName()
+		}
+	}); err != nil {
+		return err
+	}
+	// 手动“立即应用”需要新鲜的网络信息；只在规则需要时读取一次 Wi-Fi，不开启持续轮询。
+	info := readNetworkInfo(includeWifi)
+	return app.onUi(func() error { return app.engine.ApplyAutoSwitchWithNetwork(info) })
 }
 
 func (app *App) ClearAllProxies() error {

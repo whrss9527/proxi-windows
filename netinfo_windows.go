@@ -257,15 +257,13 @@ func formatMac(bytes []byte) string {
 	return strings.Join(parts, "-")
 }
 
-func readNetworkInfo() NetworkInfo {
-	ssids, hint := wifi.currentSsids()
-	adapters, interfaces := readAdapters()
-	if len(ssids) == 0 && hint != "" {
-		if remembered := ssidsFromNetworkList(adapters); len(remembered) > 0 {
-			ssids, hint = remembered, ""
+func readNetworkInfo(includeWifi bool) NetworkInfo {
+	info := collectNetworkInfo(includeWifi, wifi.currentSsids, readAdapters)
+	if includeWifi && len(info.Ssids) == 0 && info.SsidError != "" {
+		if remembered := ssidsFromNetworkList(info.Adapters); len(remembered) > 0 {
+			info.Ssids, info.SsidError = remembered, ""
 		}
 	}
-	info := NetworkInfo{Ssids: ssids, SsidError: hint, Adapters: adapters, Interfaces: interfaces}
 	info.Metered = cachedNetworkMetered(info.Signature())
 	return info
 }

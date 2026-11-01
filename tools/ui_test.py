@@ -12,6 +12,8 @@ import hashlib
 import http.server
 import json
 import os
+import pathlib
+import shutil
 import socket
 import subprocess
 import sys
@@ -101,14 +103,20 @@ def start_exit_ip_server():
 
 
 def start_server(directory):
-    binary = os.path.join(directory, "proxyswitch-dev")
+    # 使用已有的公开地理数据时避免测试期间访问外网；没有提供时仍走正常下载流程。
+    geo = os.environ.get("PROXYSWITCH_GEO_DIR", "")
+    if geo:
+        os.makedirs(os.path.join(directory, "core"), exist_ok=True)
+        for name in ("Country.mmdb", "GeoSite.dat"):
+            shutil.copyfile(os.path.join(geo, name), os.path.join(directory, "core", name))
+    binary = os.path.join(directory, "proxyswitch-dev.exe" if os.name == "nt" else "proxyswitch-dev")
     subprocess.run(["go", "build", "-o", binary, "."], cwd=ROOT, check=True)
     arguments = [binary, "--dev-settings", f"--dir={directory}", f"--release-api={start_release_server()}", f"--exit-ip-api={start_exit_ip_server()}"]
     if CORE:
         arguments.append(f"--core={CORE}")
     # 去掉 OneDrive 的环境变量：配置同步的测试从「没有找到 OneDrive」开始，自己填同步文件夹。
     environment = {key: value for key, value in os.environ.items() if not key.lower().startswith("onedrive") and key != "PROXYSWITCH_SYNC_DIR"}
-    process = subprocess.Popen(arguments, stdout=subprocess.PIPE, text=True, env=environment)
+    process = subprocess.Popen(arguments, stdout=subprocess.PIPE, text=True, encoding="utf-8", env=environment)
     info = json.loads(process.stdout.readline())
     return process, info
 
@@ -200,7 +208,7 @@ def main():
     errors = []
     try:
         with sync_playwright() as playwright:
-            browser = playwright.chromium.launch()
+            browser = playwright.chromium.launch(channel=os.environ.get("PROXYSWITCH_BROWSER_CHANNEL") or None)
             context = browser.new_context(viewport={"width": 1120, "height": 800}, device_scale_factor=1, locale="zh-CN", permissions=["clipboard-read", "clipboard-write"])
             page = context.new_page()
             page.on("pageerror", lambda error: errors.append(f"pageerror: {error}"))
@@ -225,7 +233,16 @@ def shot(page, name):
 
 
 def read_config(path):
-    text = open(path, encoding="utf-8-sig").read()
+    # Windows 替换文件时读取可能短暂被拒绝；不吞掉 JSON 错误，半份配置仍会让测试失败。
+    for attempt in range(8):
+        try:
+            with open(path, encoding="utf-8-sig") as source:
+                text = source.read()
+            break
+        except PermissionError:
+            if attempt == 7:
+                raise
+            time.sleep(0.01)
     return json.loads("\n".join(line for line in text.splitlines() if not line.lstrip().startswith("//")))
 
 
@@ -340,14 +357,17 @@ def run_flows(page, api, info, config_path):
     # ---------- 自动切换 ----------
     page.click("[data-page=network]")
     page.wait_for_selector(".network")
-    page.click("[data-action=quick-rule] >> nth=0")
+    check(page.get_attribute("#network-privacy", "data-reading") == "false" and page.locator("[data-action=quick-rule][data-match=ssid]").count() == 0, "自动切换关闭时不显示未读取的 Wi-Fi 名称，并说明原因")
+    page.click("[data-action=add-rule]")
     page.wait_for_selector(".dialog #rule-value")
-    check(page.input_value(".dialog #rule-value") == "Home-WiFi", "快速添加规则时预填当前 Wi-Fi 名称")
+    page.click(".dialog [data-match=ssid]")
+    page.fill(".dialog #rule-value", "Home-WiFi")
     page.select_option(".dialog #rule-action", "off")
     page.click(".dialog [data-action=rule-save]")
     page.wait_for_selector(".dialog", state="detached")
     config = read_config(config_path)
     check(config["auto_switch"]["enabled"] and config["auto_switch"]["rules"][0]["action"] == "off", "添加第一条规则后自动开启自动切换")
+    check(wait_until(lambda: page.get_attribute("#network-privacy", "data-reading") == "true"), "启用 Wi-Fi 条件后说明名称读取及 Windows 位置提示")
     check(wait_until(lambda: api.call("GET", "/api/state")["status"]["state"] == "off"), "开启自动切换后按当前网络立即生效（家里关闭代理）")
     page.click("[data-action=add-rule]")
     page.wait_for_selector(".dialog #rule-value")
@@ -627,6 +647,13 @@ def run_flows(page, api, info, config_path):
     page.click("[data-page=general]")
     page.click("[data-action=set-theme][data-value=dark]")
     check(wait_until(lambda: page.evaluate("document.documentElement.dataset.theme") == "dark"), "切换到深色主题")
+    check(page.get_attribute("#favicon", "href") == "/assets/brand.svg" and page.locator(".brand img[src='/assets/brand.svg']").count() == 1, "应用标识与网站图标不随代理状态改变")
+    page.click("[data-action=set-tray-icon][data-value=toggle]")
+    check(wait_until(lambda: read_config(config_path).get("tray_icon") == "toggle"), "托盘可以选择按配置颜色显示开关")
+    page.click("[data-action=set-tray-icon][data-value=brand]")
+    check(wait_until(lambda: read_config(config_path).get("tray_icon") == "brand"), "托盘可以选择应用图标与状态角标")
+    page.locator("[data-action=set-tray-icon][data-value=brand]").scroll_into_view_if_needed()
+    shot(page, "16_icon_settings_dark")
     page.click("[data-page=proxies]")
     for name in ["本机代理", "学校 PAC", "SOCKS5 备用"]:
         page.click(f".profile:has-text('{name}') [data-action=profile-menu]")
@@ -659,7 +686,7 @@ def run_flows(page, api, info, config_path):
     page.fill(".dialog [data-field=subscription]", "sub.yaml")
     page.click(".dialog [data-action=dialog-test]")
     check(wait_until(lambda: "完整的路径" in page.inner_text(".dialog [data-error=subscription]"), timeout=3), "订阅地址不完整时提示本机文件的写法")
-    page.fill(".dialog [data-field=subscription]", "file://" + subscription_file)
+    page.fill(".dialog [data-field=subscription]", pathlib.Path(subscription_file).as_uri())
     page.click(".dialog [data-action=dialog-test]")
     check(wait_until(lambda: "5 个节点" in page.inner_text(".dialog [data-check-result]") and "已用" not in page.inner_text(".dialog [data-check-result]"), timeout=10), "检查本机的订阅文件")
     check(page.input_value(".dialog [data-field=name]") == "测试机场", "已经有名字时不用文件名")

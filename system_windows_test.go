@@ -177,7 +177,7 @@ func TestListTcpListeners(t *testing.T) {
 }
 
 func TestReadNetworkInfo(t *testing.T) {
-	info := readNetworkInfo()
+	info := readNetworkInfo(false)
 	t.Logf("网络：%s，特征：%s", info.Describe(), info.Signature())
 	for _, adapter := range info.Adapters {
 		if adapter.Name == "" || adapter.Gateway == "" {

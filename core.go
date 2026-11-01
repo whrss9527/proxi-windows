@@ -52,11 +52,12 @@ func coreBinaryName() string {
 
 // CoreStatus 是内核的运行状态，给设置页显示。Share 是局域网共享入口的状态，Tun 是 TUN 模式的状态。
 type CoreStatus struct {
-	Running bool            `json:"running"`
-	Port    int             `json:"port,omitempty"`
-	Error   string          `json:"error,omitempty"`
-	Share   CoreShareStatus `json:"share"`
-	Tun     CoreTunStatus   `json:"tun"`
+	Running  bool            `json:"running"`
+	Starting bool            `json:"starting"`
+	Port     int             `json:"port,omitempty"`
+	Error    string          `json:"error,omitempty"`
+	Share    CoreShareStatus `json:"share"`
+	Tun      CoreTunStatus   `json:"tun"`
 }
 
 // CoreTunStatus 是 TUN 模式的状态：Active 表示虚拟网卡正在接管流量；要开却没开起来时 Error 说明原因
@@ -148,6 +149,7 @@ type Core struct {
 
 	// 以下只由后台 goroutine 修改，读取时持有 mutex。
 	process    coreProcess
+	ready      bool
 	exited     chan struct{}
 	controller string
 	secret     string
@@ -225,7 +227,7 @@ func (core *Core) Kill() {
 func (core *Core) Status() CoreStatus {
 	core.mutex.Lock()
 	defer core.mutex.Unlock()
-	status := CoreStatus{Running: core.process != nil, Error: core.lastError, Share: core.share, Tun: core.tun}
+	status := CoreStatus{Running: core.process != nil && core.ready, Starting: core.process != nil && !core.ready, Error: core.lastError, Share: core.share, Tun: core.tun}
 	if status.Running {
 		status.Port = coreMixedPort(core.current)
 	} else {
@@ -364,7 +366,14 @@ func (core *Core) applyCore(settings CoreSettings) error {
 	core.current = settings
 	core.mutex.Unlock()
 	core.setTun(CoreTunStatus{Active: settings.Tun, Error: tunError})
-	return core.applySelections(settings)
+	if err := core.applySelections(settings); err != nil {
+		return err
+	}
+	// 进程和接口出现不等于代理配置已经恢复；选好订阅和节点后才对界面报告可用。
+	core.mutex.Lock()
+	core.ready = true
+	core.mutex.Unlock()
+	return nil
 }
 
 func (core *Core) setTun(status CoreTunStatus) {
@@ -471,6 +480,7 @@ func (core *Core) start(settings CoreSettings) error {
 	exited := make(chan struct{})
 	core.mutex.Lock()
 	core.process, core.exited, core.controller, core.secret = process, exited, controller, secretText
+	core.ready = false
 	core.configText = nil
 	core.mutex.Unlock()
 	go core.watch(process, exited)

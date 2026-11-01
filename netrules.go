@@ -25,12 +25,37 @@ type NetworkInterface struct {
 // NetworkInfo 是当前所在网络的特征，用于按网络自动切换。Adapters 是有默认网关的网卡，Interfaces 是所有已连接的网卡
 // （不含回环和 TUN 模式的虚拟网卡）。
 type NetworkInfo struct {
-	Ssids      []string           `json:"ssids"`
-	SsidError  string             `json:"ssid_error,omitempty"`
-	Adapters   []NetworkAdapter   `json:"adapters"`
-	Interfaces []NetworkInterface `json:"interfaces"`
+	Ssids        []string           `json:"ssids"`
+	SsidError    string             `json:"ssid_error,omitempty"`
+	WifiNameRead bool               `json:"wifi_name_read"`
+	Adapters     []NetworkAdapter   `json:"adapters"`
+	Interfaces   []NetworkInterface `json:"interfaces"`
 	// Metered 表示现在的网络按流量计费（手机热点、设成按流量计费的 Wi-Fi 等），不影响 Signature。
 	Metered bool `json:"metered,omitempty"`
+}
+
+// 只有实际配置了 Wi-Fi 名称条件时才需要读取；网关、网卡和 DNS 后缀条件不需要位置权限。
+func (autoSwitch AutoSwitch) needsWifiName() bool {
+	for _, rule := range autoSwitch.Rules {
+		if rule.Match == "ssid" && strings.TrimSpace(rule.Value) != "" {
+			return true
+		}
+	}
+	return false
+}
+
+func shouldReadWifiName(config *Config) bool {
+	return config != nil && config.AutoSwitch.Enabled && config.AutoSwitch.needsWifiName()
+}
+
+// 先读不需要位置权限的网卡信息，Wi-Fi 查询必须经过明确的按需判断。
+func collectNetworkInfo(includeWifi bool, readWifi func() ([]string, string), readAdapters func() ([]NetworkAdapter, []NetworkInterface)) NetworkInfo {
+	adapters, interfaces := readAdapters()
+	info := NetworkInfo{Adapters: adapters, Interfaces: interfaces, WifiNameRead: includeWifi}
+	if includeWifi {
+		info.Ssids, info.SsidError = readWifi()
+	}
+	return info
 }
 
 // Signature 在网络没变时保持不变，变化时（换 Wi-Fi、插拔网线、连上有默认网关的 VPN）随之改变。没有默认网关的网卡

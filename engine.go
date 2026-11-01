@@ -801,6 +801,11 @@ func (engine *Engine) UpdateNetwork(info NetworkInfo) {
 }
 
 // ApplyAutoSwitch 立即按当前网络应用自动切换规则（设置页的“立即应用”）。
+func (engine *Engine) ApplyAutoSwitchWithNetwork(info NetworkInfo) error {
+	engine.network = info
+	return engine.ApplyAutoSwitch()
+}
+
 func (engine *Engine) ApplyAutoSwitch() error {
 	if engine.config == nil {
 		return errNoConfig

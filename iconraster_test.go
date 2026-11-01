@@ -62,6 +62,10 @@ func TestIconPreview(t *testing.T) {
 	if path == "" {
 		t.Skip("设置 ICON_PREVIEW 才生成预览图")
 	}
+	mode := os.Getenv("ICON_PREVIEW_STYLE")
+	if mode == "" {
+		mode = "toggle"
+	}
 	sizes := []int{16, 20, 24, 32, 48}
 	states := []struct{ state, color string }{
 		{iconStateOff, ""}, {iconStateOn, "#16a34a"}, {iconStateOn, "#2563eb"}, {iconStateOn, "#7c3aed"},
@@ -77,7 +81,7 @@ func TestIconPreview(t *testing.T) {
 				originX := (variant*len(sizes) + column) * cell
 				originY := row * cell
 				draw.Draw(sheet, image.Rect(originX, originY, originX+cell, originY+cell), &image.Uniform{background}, image.Point{}, draw.Src)
-				icon := renderToggleIcon(size, trayIconStyle(item.state, item.color))
+				icon := renderTrayIcon(size, mode, item.state, item.color)
 				offset := (cell - size) / 2
 				draw.Draw(sheet, image.Rect(originX+offset, originY+offset, originX+offset+size, originY+offset+size), icon, image.Point{}, draw.Over)
 			}

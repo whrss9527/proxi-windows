@@ -1104,7 +1104,7 @@ function renderNodes(profile, view) {
 const matchLabels = { ssid: "Wi-Fi 名称", dns_suffix: "DNS 后缀", gateway: "网关", adapter: "网卡" };
 
 const matchHints = {
-  ssid: "连接的 Wi-Fi 名称，不区分大小写",
+  ssid: "连接的 Wi-Fi 名称，不区分大小写。启用这类规则后会读取名称，Windows 可能显示位置访问提示；不需要时可改用网关或网卡条件。",
   dns_suffix: "网络分配的 DNS 后缀，例如 corp.example.com，公司网络常见，有线网络也适用",
   gateway: "路由器的 MAC 地址（更可靠）或 IP 地址，有线网络也适用",
   adapter: "网卡的名字或型号里包含的文字，不区分大小写，例如 WireGuard、Tailscale、AnyConnect：连上 VPN 时切换，断开后按其他规则",

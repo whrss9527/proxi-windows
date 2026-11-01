@@ -328,6 +328,26 @@ a:hover {
   color: var(--text-2);
 }
 
+/* 应用身份和代理状态分开显示；样式选择中的两个预览分别表示开启和关闭。 */
+.tray-icon-choices { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 12px; margin-top: 8px; }
+.tray-icon-choice { display: flex; align-items: center; gap: 14px; padding: 16px; min-width: 0; border: 1px solid var(--control-stroke); border-radius: 14px; background: var(--control); color: var(--text); cursor: pointer; text-align: left; font: inherit; transition: background .15s, border-color .15s; }
+.tray-icon-choice:hover { background: var(--control-hover); }
+.tray-icon-choice[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+.tray-icon-choice:focus-visible { outline: 3px solid var(--accent-ring); outline-offset: 3px; }
+.tray-icon-choice > span:nth-child(2) { flex: 1; }
+.tray-icon-choice strong, .tray-icon-choice .caption { display: block; }
+.tray-icon-choice > .icon { visibility: hidden; color: var(--accent-text); flex: none; }
+.tray-icon-choice[aria-pressed="true"] > .icon { visibility: visible; }
+.tray-icon-samples { display: flex; gap: 8px; align-items: center; flex: none; }
+.tray-preview-brand { position: relative; display: inline-flex; width: 32px; height: 32px; }
+.tray-preview-brand .brand-logo { width: 32px; height: 32px; }
+.tray-preview-badge { position: absolute; right: -1px; bottom: -1px; display: grid; place-items: center; width: 15px; height: 15px; border: 2px solid #fff; border-radius: 50%; color: white; background: var(--badge); font: 700 10px/1 system-ui; }
+.tray-preview-toggle { width: 32px; height: 32px; }
+.network-privacy { display: flex; gap: 12px; margin-top: 14px; padding: 16px 18px; border: 1px solid var(--card-stroke); border-radius: 16px; background: var(--accent-soft); color: var(--text); }
+.network-privacy > .icon { color: var(--accent-text); flex: none; margin-top: 2px; }
+.network-privacy strong { font-size: 13px; font-weight: 600; }
+.network-privacy p { margin: 4px 0 0; color: var(--text-2); font-size: 12px; line-height: 1.7; }
+
 .nav-item {
   position: relative;
   display: flex;
