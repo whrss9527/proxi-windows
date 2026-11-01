@@ -237,13 +237,13 @@ func (widget *floatingWindow) paint(dc uintptr, rect menuRect) {
 	}
 	divider := menuRect{left: int32(r.dp(44)), top: int32(r.dp(10)), right: int32(r.dp(45)), bottom: rect.bottom - int32(r.dp(10))}
 	fillMenuRect(dc, divider, mixHeaderColor(palette.background, palette.text, .14))
-	down, up := "↓ 采样中…", "↑ —"
+	up, down := "↑ 采样中…", "↓ —"
 	if widget.speed.Ready && widget.speed.Mode == speedSystem {
-		down, up = "↓ "+formatSpeed(widget.speed.Download), "↑ "+formatSpeed(widget.speed.Upload)
+		up, down = "↑ "+formatSpeed(widget.speed.Upload), "↓ "+formatSpeed(widget.speed.Download)
 	}
 	procSelectObject.Call(dc, r.font)
 	procSetBkMode.Call(dc, 1)
-	for index, text := range []string{down, up} {
+	for index, text := range []string{up, down} {
 		box := menuRect{left: int32(r.dp(54)), top: int32(r.dp(2 + index*20)), right: rect.right - int32(r.dp(10)), bottom: int32(r.dp(22 + index*20))}
 		paint := palette.text
 		if index == 1 && !r.highContrast {
