@@ -230,15 +230,15 @@ func firstStrings(list []string, limit int) []string {
 
 // RouteTrace 是内核对一次连接的判定，从它的日志行里解析出来：
 //
-//	[TCP] 127.0.0.1:50000 --> www.youtube.com:443 match RuleSet(proxy-1) using ProxySwitch[香港 01]
+//	[TCP] 127.0.0.1:50000 --> www.youtube.com:443 match RuleSet(proxy-1) using Proxi[香港 01]
 //	[TCP] 127.0.0.1:50000 --> example.com:443 doesn't match any rule using DIRECT
-//	[TCP] dial ProxySwitch (match Match/) 127.0.0.1:50000 --> www.google.com:443 error: …
+//	[TCP] dial Proxi (match Match/) 127.0.0.1:50000 --> www.google.com:443 error: …
 type RouteTrace struct {
 	Host string `json:"host"`
 	Port int    `json:"port"`
 	// Rule 是命中的规则，例如 RuleSet(proxy-1)、Match；模式直接决定时为空。
 	Rule string `json:"rule"`
-	// Chain 是内核给的出口：ProxySwitch[香港 01]、DIRECT、上游代理。
+	// Chain 是内核给的出口：Proxi[香港 01]、DIRECT、上游代理。
 	Chain string `json:"chain"`
 	Error string `json:"error,omitempty"`
 }
@@ -512,7 +512,7 @@ type DiagnoseJob struct {
 // diagnoseReport 是可以复制给别人看的文字报告。
 func diagnoseReport(job DiagnoseJob) string {
 	view := map[string]string{diagnosePc: "这台电脑", diagnoseDevice: "局域网设备"}[job.Perspective]
-	lines := []string{"ProxySwitch 网址诊断：" + job.Url + "（" + view + "，版本 " + appVersion + "）"}
+	lines := []string{"Proxi 网址诊断：" + job.Url + "（" + view + "，版本 " + appVersion + "）"}
 	marks := map[string]string{"pass": "✓", "warn": "!", "fail": "✗", "skipped": "–"}
 	for _, row := range job.Rows {
 		mark := marks[row.Outcome]

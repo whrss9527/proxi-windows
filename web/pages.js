@@ -168,7 +168,7 @@ function coreNotice(purpose = "使用订阅") {
     }
     if (core.downloadable) {
       return html`<div class="infobar info">${icon("download")}<div class="infobar-body"><div class="infobar-title">${purpose}需要先下载代理内核</div>
-        ProxySwitch 用 mihomo（Clash.Meta）内核连接订阅里的节点、提供局域网共享。只需下载一次，约 20 MB，下载后自动校验。
+        Proxi 用 mihomo（Clash.Meta）内核连接订阅里的节点、提供局域网共享。只需下载一次，约 20 MB，下载后自动校验。
         <div class="infobar-actions"><button class="button accent" data-action="install-core">${icon("download")}下载内核</button></div></div></div>`;
     }
     return html`<div class="infobar info">${icon("info")}<div class="infobar-body"><div class="infobar-title">${purpose}需要 mihomo 内核</div>
@@ -281,7 +281,7 @@ function heroView() {
     checked = true;
     title = "系统代理由其他程序设置";
     subtitle = html`<span class="mono">${status.external}</span>`;
-    health = html`<span>可能是代理软件或 Windows 设置里开启的。点开关会改为直接连接；保存为配置后，就能用 ProxySwitch 随时开关它。</span>`;
+    health = html`<span>可能是代理软件或 Windows 设置里开启的。点开关会改为直接连接；保存为配置后，就能用 Proxi 随时开关它。</span>`;
   } else if (profile) {
     subtitle = html`<span>打开后使用</span><strong style="color:var(--text)">${profile.name}</strong><span class="mono">${describeServer(profile)}</span>`;
     if (status.health === "down") {
@@ -1570,7 +1570,7 @@ function syncPage() {
   }
   const folderControl = enabled
     ? html`<button class="button" data-action="sync-open">${icon("folder")}打开</button><button class="button" data-action="sync-now" ${app.busy ? raw("disabled") : ""}>${icon("refresh")}立即同步</button>`
-    : html`<input class="input mono" style="width:300px" id="sync-folder" data-sync-folder value="${folder}" placeholder="${sync.default_folder || "例如 D:\\坚果云\\ProxySwitch"}" spellcheck="false" autocomplete="off" aria-label="同步文件夹">`;
+    : html`<input class="input mono" style="width:300px" id="sync-folder" data-sync-folder value="${folder}" placeholder="${sync.default_folder || "例如 D:\\坚果云\\Proxi"}" spellcheck="false" autocomplete="off" aria-label="同步文件夹">`;
   return html`
     ${pageHeader("配置同步")}
     <p class="muted" style="margin:-12px 0 16px">在几台电脑之间同步代理配置、分流规则和设置：放在 OneDrive 或任意会同步的文件夹里，一台改了，其他几台几秒内跟着变。</p>
@@ -1638,6 +1638,7 @@ function generalPage() {
       ${settingCard({ iconName: "mouse", title: "单击托盘图标", control: select("tray_click", config.tray_click, [["toggle", "开关代理"], ["settings", "打开设置"], ["menu", "显示菜单"]]) })}
       ${settingCard({ iconName: "mouse", title: "双击托盘图标", description: config.tray_double_click !== "none" ? "设置了双击后，单击要稍等一下才生效" : "", control: select("tray_double_click", config.tray_double_click, [["none", "不响应"], ["settings", "打开设置"], ["toggle", "开关代理"]]) })}
       ${settingCard({ iconName: "gauge", title: "实时网速", description: "显示在托盘图标的提示和「代理」页的开关卡片上，每两秒更新一次", control: select("speed_display", config.speed_display, [["system", "系统网络总速度"], ["core", "只算内置代理"], ["none", "不显示"]]) })}
+      ${settingCard({ iconName: "gauge", title: "悬浮网速按钮", description: "左侧为 Proxi 和连接状态，右侧显示电脑总下载与上传速度。单击打开设置，拖动移动，右键打开菜单", control: switchButton({ checked: config.floating_widget.enabled, setting: "floating_widget.enabled", label: "悬浮网速按钮" }), note: html`<div class="floating-preview" aria-label="悬浮按钮外观预览">${brandLogo("floating-preview-logo")}<span>↓ 下载速度<br>↑ 上传速度</span></div>${config.floating_widget.enabled ? html`<button class="button subtle" data-action="reset-floating">重置位置</button>` : ""}` })}
     </div>
 
     <div class="section-title">通知</div>
@@ -1682,7 +1683,7 @@ function generalPage() {
 
 // ---------- 系统集成 ----------
 
-// systemPage 是和 Windows 打交道的设置：网页链接（proxyswitch:// 和机场网站的一键导入）等。
+// systemPage 是和 Windows 打交道的设置：网页链接（proxi:// 和机场网站的一键导入）等。
 function systemPage() {
   if (!app.config) {
     return html`${pageHeader("系统集成")}${configErrorView()}`;
@@ -1693,7 +1694,7 @@ function systemPage() {
 
     <div class="section-title">网页链接</div>
     <div class="card card-group">
-      ${settingCard({ iconName: "link", title: "网页链接", description: html`浏览器和脚本可以用链接操作 ProxySwitch，例如 <span class="mono">proxyswitch://toggle</span> 开关代理`, control: html`<span class="switch-label">${config.url_links ? "开" : "关"}</span>${switchButton({ checked: config.url_links, setting: "url_links", label: "网页链接" })}` })}
+      ${settingCard({ iconName: "link", title: "网页链接", description: html`浏览器和脚本可以用链接操作 Proxi，例如 <span class="mono">proxi://toggle</span> 开关代理`, control: html`<span class="switch-label">${config.url_links ? "开" : "关"}</span>${switchButton({ checked: config.url_links, setting: "url_links", label: "网页链接" })}` })}
       ${config.url_links ? clashLinksCard() : ""}
     </div>
 
@@ -1733,7 +1734,7 @@ function winHttpCard() {
   }
   let note = "";
   if (using && app.config && info.proxy === `127.0.0.1:${app.config.core.port}`) {
-    note = "内置内核在 ProxySwitch 运行期间一直可用，退出 ProxySwitch 前改回直连";
+    note = "内置内核在 Proxi 运行期间一直可用，退出 Proxi 前改回直连";
   } else if (using) {
     note = "这个代理软件要一直开着，不用时改回直连";
   } else if (!info.suggested && info.unsupported) {
@@ -1801,12 +1802,12 @@ function loopbackControl() {
 // clashLinksCard 说明机场网站的「一键导入 Clash」（clash:// 链接）由谁处理，别的程序在处理时可以接管。
 function clashLinksCard() {
   const links = app.state.links || {};
-  const effect = "点机场网站上的「一键导入 Clash」会打开 ProxySwitch，填好订阅地址";
+  const effect = "点机场网站上的「一键导入 Clash」会打开 Proxi，填好订阅地址";
   if (links.clash_ours) {
-    return settingCard({ iconName: "download", title: "机场网站的一键导入", description: effect, control: html`<span class="badge success">由 ProxySwitch 处理</span>` });
+    return settingCard({ iconName: "download", title: "机场网站的一键导入", description: effect, control: html`<span class="badge success">由 Proxi 处理</span>` });
   }
   const current = links.clash ? `现在由「${links.clash}」处理。` : "现在没有程序处理。";
-  return settingCard({ iconName: "download", title: "机场网站的一键导入", description: `${current}改由 ProxySwitch 处理后，${effect}`, control: html`<button class="button" data-action="take-over-clash-links">改由 ProxySwitch 处理</button>` });
+  return settingCard({ iconName: "download", title: "机场网站的一键导入", description: `${current}改由 Proxi 处理后，${effect}`, control: html`<button class="button" data-action="take-over-clash-links">改由 Proxi 处理</button>` });
 }
 
 // tunDescription 说明 TUN 模式的作用和现在的状态：正在接管、没开起来的原因，或者等订阅配置开启。
@@ -1846,7 +1847,7 @@ function coreSettingsView(config) {
       ${settingCard({ iconName: "layers", title: "TUN 模式（虚拟网卡）", description: tunDescription(config), control: html`<span class="switch-label">${config.tun.enabled ? "开" : "关"}</span>${switchButton({ checked: config.tun.enabled, setting: "tun.enabled", label: "TUN 模式" })}` })}
       ${settingCard({ iconName: "clock", title: "按流量计费时暂停更新", description: meteredDescription(config), control: html`<span class="switch-label">${config.pause_on_metered ? "开" : "关"}</span>${switchButton({ checked: config.pause_on_metered, setting: "pause_on_metered", label: "按流量计费时暂停更新" })}` })}
       ${settingCard({ iconName: "link", title: "本地代理端口", description: "订阅配置开启后，系统代理和环境变量指向 127.0.0.1 的这个端口（HTTP 和 SOCKS5 共用）", control: html`<input class="input mono numeric" style="width:96px" id="core-port" data-setting-number="core.port" value="${config.core.port}" inputmode="numeric" spellcheck="false">` })}
-      ${settingCard({ iconName: "folder", title: "内核程序的位置", description: core.downloadable ? "留空使用 ProxySwitch 下载的内核；也可以填本机已有的 mihomo 程序" : "填本机 mihomo 程序的完整路径", control: html`<input class="input mono" style="width:280px" id="core-path" data-setting-text="core.path" value="${config.core.path}" placeholder="${core.downloadable ? "自动下载" : "例如 C:\\mihomo\\mihomo.exe"}" spellcheck="false">` })}
+      ${settingCard({ iconName: "folder", title: "内核程序的位置", description: core.downloadable ? "留空使用 Proxi 下载的内核；也可以填本机已有的 mihomo 程序" : "填本机 mihomo 程序的完整路径", control: html`<input class="input mono" style="width:280px" id="core-path" data-setting-text="core.path" value="${config.core.path}" placeholder="${core.downloadable ? "自动下载" : "例如 C:\\mihomo\\mihomo.exe"}" spellcheck="false">` })}
     </div>`;
 }
 
@@ -1923,7 +1924,7 @@ function diagnosticsPage() {
     </div>
     ${diagnostics && diagnostics.last_crash ? html`
       <div class="section-title">${icon("warning")}最近一次意外退出<span class="caption faint">${diagnostics.last_crash_time}</span></div>
-      <div class="infobar warning" style="margin-bottom:8px">${icon("warning")}<div class="infobar-body">ProxySwitch 在 ${diagnostics.last_crash_time} 出错退出过。反馈问题时请附上「复制诊断信息」的内容，里面包含下面的记录。</div></div>
+      <div class="infobar warning" style="margin-bottom:8px">${icon("warning")}<div class="infobar-body">Proxi 在 ${diagnostics.last_crash_time} 出错退出过。反馈问题时请附上「复制诊断信息」的内容，里面包含下面的记录。</div></div>
       <div class="card"><pre class="log crash">${diagnostics.last_crash}</pre></div>` : ""}
     <div class="section-title">${icon("monitor")}Windows 系统代理</div>
     ${systemCard}
@@ -1994,7 +1995,7 @@ function updateView() {
     const percent = progress.total > 0 ? Math.min(100, Math.round((progress.received * 100) / progress.total)) : 0;
     return html`
       <div class="infobar info">${icon("download")}<div class="infobar-body">
-        <div class="infobar-title">正在下载 ProxySwitch ${update ? update.latest : ""}</div>
+        <div class="infobar-title">正在下载 Proxi ${update ? update.latest : ""}</div>
         <div class="progress ${progress.total > 0 ? "" : "indeterminate"}" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${percent}"><span style="width:${percent}%"></span></div>
         <div class="caption muted numeric">${progress.total > 0 ? `${megabytes(progress.received)} / ${megabytes(progress.total)}` : progress.received > 0 ? megabytes(progress.received) : "正在连接…"}</div>
       </div></div>`;
@@ -2041,7 +2042,7 @@ function donateCard() {
 function aboutPage() {
   const update = app.update;
   const busy = (update && update.checking) || app.installing || app.restarting;
-  const repository = "https://github.com/whrss9527/proxyswitch";
+  const repository = "https://github.com/whrss9527/proxi-windows";
   return html`
     ${pageHeader("关于")}
     <div class="about-top">
@@ -2049,7 +2050,7 @@ function aboutPage() {
         <div class="card about-hero">
           ${brandLogo()}
           <div style="flex:1">
-            <div class="about-name">ProxySwitch</div>
+            <div class="about-name">Proxi</div>
             <div class="muted">快捷切换 Windows 代理 · 版本 <span class="numeric">${app.state.version}</span>${app.state.platform === "dev" ? html` <span class="badge warning">开发模式</span>` : ""}</div>
           </div>
           <button class="button" data-action="check-update" ${busy ? raw("disabled") : ""}>${icon("refresh")}检查更新</button>
@@ -2070,14 +2071,14 @@ function aboutPage() {
       ${settingCard({ iconName: "layers", title: "版本历史", control: html`<button class="button" data-action="open-url" data-url="${repository}/releases">${icon("external")}打开</button>` })}
     </div>
     <div class="section-title">命令行</div>
-    <div class="card"><pre class="code">ProxySwitch.exe on              开启代理（上次使用的配置）
-ProxySwitch.exe off             关闭代理
-ProxySwitch.exe toggle          开 / 关切换
-ProxySwitch.exe use 配置名       切换到指定配置并开启
-ProxySwitch.exe share [on|off]  开关局域网共享（不写表示切换）
-ProxySwitch.exe diagnose 网址    网址诊断，加 --device 从局域网设备的视角
-ProxySwitch.exe status          查看状态（退出码 0 开启，1 关闭）
-ProxySwitch.exe settings        打开设置</pre></div>
+    <div class="card"><pre class="code">Proxi.exe on              开启代理（上次使用的配置）
+Proxi.exe off             关闭代理
+Proxi.exe toggle          开 / 关切换
+Proxi.exe use 配置名       切换到指定配置并开启
+Proxi.exe share [on|off]  开关局域网共享（不写表示切换）
+Proxi.exe diagnose 网址    网址诊断，加 --device 从局域网设备的视角
+Proxi.exe status          查看状态（退出码 0 开启，1 关闭）
+Proxi.exe settings        打开设置</pre></div>
     <div class="section-title">文件位置</div>
     <dl class="card kv">
       <dt>配置文件</dt><dd class="mono">${app.state.paths.config}</dd>

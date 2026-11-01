@@ -200,10 +200,10 @@ rules:
 	sets := map[ruleSetSource][]ruleEntry{{"https://example.com/cncidr.txt", false}: {{Kind: "IP-CIDR", Value: "1.0.1.0/24"}}}
 	converted := convertRules(config, sets, "r")
 	lines := templateLines(converted.Rules, "", nil)
-	if !containsString(lines, "PROCESS-NAME,Telegram.exe,ProxySwitch") {
+	if !containsString(lines, "PROCESS-NAME,Telegram.exe,Proxi") {
 		t.Errorf("PROCESS-NAME 规则应交给内核：%v", lines)
 	}
-	if !converted.Geo || !containsString(lines, "GEOSITE,category-ads-all,REJECT") || !containsString(lines, "GEOSITE,geolocation-!cn,ProxySwitch") {
+	if !converted.Geo || !containsString(lines, "GEOSITE,category-ads-all,REJECT") || !containsString(lines, "GEOSITE,geolocation-!cn,Proxi") {
 		t.Errorf("GEOSITE 规则应原样交给内核，并下载地理数据：%v", lines)
 	}
 	if !containsString(lines, "IP-CIDR,1.0.1.0/24,DIRECT,no-resolve") {
@@ -296,13 +296,13 @@ func TestConvertRules(t *testing.T) {
 	converted := convertRules(config, sets, "rs-1")
 	want := []string{
 		"RULE-SET,rs-1-1,REJECT",
-		"DOMAIN-SUFFIX,google.com,ProxySwitch",
-		"DOMAIN-KEYWORD,youtube,ProxySwitch",
-		"IP-CIDR,91.108.4.0/22,ProxySwitch,no-resolve",
-		"GEOIP,US,ProxySwitch",
+		"DOMAIN-SUFFIX,google.com,Proxi",
+		"DOMAIN-KEYWORD,youtube,Proxi",
+		"IP-CIDR,91.108.4.0/22,Proxi,no-resolve",
+		"GEOIP,US,Proxi",
 		"DOMAIN-SUFFIX,cn.example.com,DIRECT",
 		"GEOIP,CN,DIRECT",
-		"RULE-SET,rs-1-2,ProxySwitch",
+		"RULE-SET,rs-1-2,Proxi",
 	}
 	if lines := templateLines(converted.Rules, "", nil); !reflect.DeepEqual(lines, want) {
 		t.Errorf("转换后的规则不对：\n%s", strings.Join(lines, "\n"))
@@ -325,7 +325,7 @@ func TestConvertRules(t *testing.T) {
 	// 策略名不同的连续规则分开：它们可能指到不同的策略组。
 	config, _ = parseRuleConfig([]byte("[Rule]\nDOMAIN-SUFFIX,netflix.com,Netflix\nDOMAIN-SUFFIX,google.com,Proxy\nFINAL,Proxy\n"))
 	converted = convertRules(config, nil, "rs-3")
-	if lines := templateLines(converted.Rules, "", []string{"netflix"}); !reflect.DeepEqual(lines, []string{"DOMAIN-SUFFIX,netflix.com,netflix", "DOMAIN-SUFFIX,google.com,ProxySwitch"}) || converted.FinalName != "Proxy" {
+	if lines := templateLines(converted.Rules, "", []string{"netflix"}); !reflect.DeepEqual(lines, []string{"DOMAIN-SUFFIX,netflix.com,netflix", "DOMAIN-SUFFIX,google.com,Proxi"}) || converted.FinalName != "Proxy" {
 		t.Errorf("策略名不同的规则应分开，同名的策略组不区分大小写：%v %+v", lines, converted)
 	}
 }
@@ -441,7 +441,7 @@ func TestFetchClashRules(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []string{"DOMAIN-SUFFIX,ads.example.com,REJECT", "DOMAIN,tracker.example.com,REJECT", "DOMAIN-SUFFIX,google.com,ProxySwitch", "IP-CIDR,1.0.1.0/24,DIRECT,no-resolve", "IP-CIDR,1.0.2.0/23,DIRECT,no-resolve"}
+	want := []string{"DOMAIN-SUFFIX,ads.example.com,REJECT", "DOMAIN,tracker.example.com,REJECT", "DOMAIN-SUFFIX,google.com,Proxi", "IP-CIDR,1.0.1.0/24,DIRECT,no-resolve", "IP-CIDR,1.0.2.0/23,DIRECT,no-resolve"}
 	if lines := templateLines(manifest.Rules, "", nil); !reflect.DeepEqual(lines, want) {
 		t.Errorf("转换后的规则不对：%v", lines)
 	}

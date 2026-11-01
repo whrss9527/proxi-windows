@@ -19,7 +19,7 @@ type ProxyCore interface {
 
 const geoRetryInterval = time.Hour
 
-// coreBinary 是内核程序的位置：配置里指定的，或 ProxySwitch 下载到工作目录的。
+// coreBinary 是内核程序的位置：配置里指定的，或 Proxi 下载到工作目录的。
 func (engine *Engine) coreBinary() string {
 	if engine.config != nil && engine.config.Core.Path != "" {
 		return engine.config.Core.Path
@@ -170,7 +170,7 @@ func (engine *Engine) coreSettings() CoreSettings {
 	return settings
 }
 
-// groupSource 是策略组的节点来源：正在使用的订阅配置，最近用的不是订阅时是第一个已下载的订阅（内核的 ProxySwitch 组
+// groupSource 是策略组的节点来源：正在使用的订阅配置，最近用的不是订阅时是第一个已下载的订阅（内核的 Proxi 组
 // 这时默认选它）；没有已下载的订阅时为空。
 func (engine *Engine) groupSource() string {
 	if engine.config == nil {
@@ -221,7 +221,7 @@ func (engine *Engine) subscriptionProblem(profile *Profile) error {
 	}
 	if engine.core == nil {
 		// 命令行在托盘程序没有运行时直接执行：内核会随命令一起退出，不能开启订阅配置。
-		return errors.New("使用订阅的配置需要 ProxySwitch 保持运行，请先打开 ProxySwitch")
+		return errors.New("使用订阅的配置需要 Proxi 保持运行，请先打开 Proxi")
 	}
 	if !fileExists(engine.coreBinary()) {
 		if engine.config.Core.Path != "" {

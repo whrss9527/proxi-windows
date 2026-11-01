@@ -37,10 +37,11 @@ type subscriptionService struct {
 	connections *connectionMonitor
 	exits       exitChecker
 	// configSync 在多台电脑之间同步配置。
-	configSync *syncService
-	diagnose   diagnoseRunner
-	speedMutex sync.Mutex
-	speed      speedMeter
+	configSync    *syncService
+	diagnose      diagnoseRunner
+	speedMutex    sync.Mutex
+	speed         speedMeter
+	floatingSpeed speedMeter
 }
 
 func newSubscriptionService(engine *Engine, core *Core, onEngine func(action func()) error) *subscriptionService {
@@ -453,9 +454,11 @@ func (service *subscriptionService) ShareActivity() ShareActivity {
 func (service *subscriptionService) watchSpeed() {
 	for range time.Tick(speedInterval) {
 		mode := speedNone
+		floating := false
 		_ = service.onEngine(func() {
 			if config := service.engine.Config(); config != nil {
 				mode = config.SpeedDisplay
+				floating = config.FloatingWidget.Enabled
 			}
 		})
 		var received, sent uint64
@@ -466,10 +469,27 @@ func (service *subscriptionService) watchSpeed() {
 		case speedCore:
 			received, sent, ok = service.core.TrafficTotals()
 		}
+		var floatingReceived, floatingSent uint64
+		floatingOK, floatingMode := false, speedNone
+		if floating {
+			floatingMode = speedSystem
+			if mode == speedSystem {
+				floatingReceived, floatingSent, floatingOK = received, sent, ok
+			} else {
+				floatingReceived, floatingSent, floatingOK = readInterfaceTotals()
+			}
+		}
 		service.speedMutex.Lock()
 		service.speed.sample(mode, time.Now(), received, sent, ok)
+		service.floatingSpeed.sample(floatingMode, time.Now(), floatingReceived, floatingSent, floatingOK)
 		service.speedMutex.Unlock()
 	}
+}
+
+func (service *subscriptionService) FloatingSpeed() SpeedInfo {
+	service.speedMutex.Lock()
+	defer service.speedMutex.Unlock()
+	return service.floatingSpeed.Info()
 }
 
 // Speed 是最近算出的实时网速。

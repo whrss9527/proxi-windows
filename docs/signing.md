@@ -1,6 +1,6 @@
 # 代码签名
 
-没有数字签名的程序第一次运行时，Windows 的 SmartScreen 会弹出「Windows 已保护你的电脑」，杀毒软件也更容易误报。给 `ProxySwitch.exe`、`ProxySwitch-arm64.exe` 和安装包 `ProxySwitch-Setup.exe` 签名后，属性里能看到发布者，下载后一般可以直接运行。
+没有数字签名的程序第一次运行时，Windows 的 SmartScreen 会弹出「Windows 已保护你的电脑」，杀毒软件也更容易误报。给 `Proxi.exe`、`Proxi-arm64.exe` 和安装包 `Proxi-Setup.exe` 签名后，属性里能看到发布者，下载后一般可以直接运行。
 
 签名用的是 [SignPath](https://signpath.io) 给开源项目的免费签名：证书由 SignPath Foundation 签发，签名里的发布者显示为「SignPath Foundation」。
 
@@ -8,7 +8,7 @@
 
 ## 申请
 
-1. 在 [signpath.org](https://signpath.org) 申请开源项目的免费签名，项目地址填 `https://github.com/whrss9527/proxyswitch`。SignPath 主要看这几点，本项目都已满足：
+1. 在 [signpath.org](https://signpath.org) 申请开源项目的免费签名，项目地址填 `https://github.com/whrss9527/proxi-windows`。SignPath 主要看这几点，本项目都已满足：
    - 开源许可证：GPL-3.0（`LICENSE`）。
    - 程序在 GitHub Actions 上从源码编译（`.github/workflows/release.yml`）。
    - 项目主页写了代码签名策略和隐私说明：README 的「[代码签名](../README.md#代码签名)」一节。
@@ -18,7 +18,7 @@
 ## 在 SignPath 里配置
 
 1. 按 SignPath 的说明把 GitHub 仓库连接为可信的构建系统（Trusted Build System 选 GitHub.com）。
-2. 项目（Project）的 slug 记下来，例如 `proxyswitch`；签名策略（Signing Policy）用发布签名的那个，例如 `release-signing`。
+2. 项目（Project）的 slug 记下来，例如 `proxi`；签名策略（Signing Policy）用发布签名的那个，例如 `release-signing`。
 3. 建两个 Artifact Configuration，slug 必须是 `programs` 和 `installer`（发布流程里写死了这两个名字）：
 
    `programs`（两个 exe）：
@@ -27,10 +27,10 @@
    <?xml version="1.0" encoding="utf-8"?>
    <artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1">
      <zip-file>
-       <pe-file path="ProxySwitch.exe">
+       <pe-file path="Proxi.exe">
          <authenticode-sign />
        </pe-file>
-       <pe-file path="ProxySwitch-arm64.exe">
+       <pe-file path="Proxi-arm64.exe">
          <authenticode-sign />
        </pe-file>
      </zip-file>
@@ -43,7 +43,7 @@
    <?xml version="1.0" encoding="utf-8"?>
    <artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1">
      <zip-file>
-       <pe-file path="ProxySwitch-Setup.exe">
+       <pe-file path="Proxi-Setup.exe">
          <authenticode-sign />
        </pe-file>
      </zip-file>
@@ -60,7 +60,7 @@ Settings → Secrets and variables → Actions：
 | --- | --- | --- |
 | Secret | `SIGNPATH_API_TOKEN` | 上面生成的 API Token |
 | Variable | `SIGNPATH_ORGANIZATION_ID` | SignPath 组织的 ID |
-| Variable | `SIGNPATH_PROJECT_SLUG` | 项目的 slug，例如 `proxyswitch` |
+| Variable | `SIGNPATH_PROJECT_SLUG` | 项目的 slug，例如 `proxi` |
 | Variable | `SIGNPATH_SIGNING_POLICY_SLUG` | 签名策略的 slug，例如 `release-signing` |
 
 ## 发版时

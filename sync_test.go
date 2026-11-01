@@ -66,7 +66,7 @@ func newSyncMachine(t *testing.T, name, configText string) *syncMachine {
 	return machine
 }
 
-// restart 模拟重新打开 ProxySwitch：新的同步服务，上次同步的情况只能从状态文件读回来。
+// restart 模拟重新打开 Proxi：新的同步服务，上次同步的情况只能从状态文件读回来。
 func (machine *syncMachine) restart() {
 	machine.service = newSyncService(machine.engine, func(action func()) error {
 		machine.mutex.Lock()
@@ -167,7 +167,7 @@ func TestSyncedConfigJsonLeavesOutLocalSettings(t *testing.T) {
 }
 
 func TestSyncBetweenTwoMachines(t *testing.T) {
-	folder := filepath.Join(t.TempDir(), "ProxySwitch")
+	folder := filepath.Join(t.TempDir(), "Proxi")
 	a := newSyncMachine(t, "甲", syncTestConfigA)
 	b := newSyncMachine(t, "乙", syncTestConfigB)
 
@@ -268,7 +268,7 @@ func TestSyncBetweenTwoMachines(t *testing.T) {
 // syncedPair 是已经开启同步、配置一致的两台电脑。
 func syncedPair(t *testing.T) (folder string, a, b *syncMachine) {
 	t.Helper()
-	folder = filepath.Join(t.TempDir(), "ProxySwitch")
+	folder = filepath.Join(t.TempDir(), "Proxi")
 	a = newSyncMachine(t, "甲", syncTestConfigA)
 	b = newSyncMachine(t, "乙", syncTestConfigB)
 	if err := a.service.Enable(folder); err != nil {
@@ -345,7 +345,7 @@ func TestSyncRememberedAcrossRestarts(t *testing.T) {
 }
 
 func TestSyncMergeKeepsBothSides(t *testing.T) {
-	folder := filepath.Join(t.TempDir(), "ProxySwitch")
+	folder := filepath.Join(t.TempDir(), "Proxi")
 	a := newSyncMachine(t, "甲", syncTestConfigA)
 	b := newSyncMachine(t, "乙", syncTestConfigB)
 	if err := a.service.Enable(folder); err != nil {
@@ -388,7 +388,7 @@ func TestSyncMergeKeepsBothSides(t *testing.T) {
 }
 
 func TestSyncResolveLocalAndCancel(t *testing.T) {
-	folder := filepath.Join(t.TempDir(), "ProxySwitch")
+	folder := filepath.Join(t.TempDir(), "Proxi")
 	a := newSyncMachine(t, "甲", syncTestConfigA)
 	b := newSyncMachine(t, "乙", syncTestConfigB)
 	if err := a.service.Enable(folder); err != nil {
@@ -443,7 +443,7 @@ func TestSyncResolveLocalAndCancel(t *testing.T) {
 }
 
 func TestSyncEnableWithSameConfigNeedsNoChoice(t *testing.T) {
-	folder := filepath.Join(t.TempDir(), "ProxySwitch")
+	folder := filepath.Join(t.TempDir(), "Proxi")
 	a := newSyncMachine(t, "甲", syncTestConfigA)
 	// 乙的配置和甲一样，只有本机的设置不同。
 	b := newSyncMachine(t, "乙", strings.Replace(syncTestConfigA, `"port": 7893`, `"port": 7990`, 1))

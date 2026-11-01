@@ -81,7 +81,7 @@ func TestDownloadLatestRelease(t *testing.T) {
 	release := &fakeRelease{
 		tag:       "v99.0.0",
 		program:   program,
-		checksums: strings.Repeat("0", 64) + "  proxyswitch-99.0.0-src.zip\n" + hex.EncodeToString(sum[:]) + " *" + updateAssetName(runtime.GOARCH) + "\n",
+		checksums: strings.Repeat("0", 64) + "  proxi-99.0.0-src.zip\n" + hex.EncodeToString(sum[:]) + " *" + updateAssetName(runtime.GOARCH) + "\n",
 		withSums:  true,
 	}
 	startFakeRelease(t, release)
@@ -207,7 +207,7 @@ func TestLatestReleaseFallback(t *testing.T) {
 
 // 检查和下载更新依次尝试各条网络路径：不通的路径换下一条，下载先用检查成功的那条。
 func TestUpdatePaths(t *testing.T) {
-	github := "https://api.github.com/repos/whrss9527/proxyswitch/releases/latest"
+	github := "https://api.github.com/repos/whrss9527/proxi-windows/releases/latest"
 	if paths := updateRoutes(github, nil); len(paths) != 1 || paths[0] != "" {
 		t.Errorf("没有路径时应直连：%q", paths)
 	}
@@ -252,7 +252,7 @@ func TestUpdatePaths(t *testing.T) {
 }
 
 func TestUpdateAssetName(t *testing.T) {
-	if updateAssetName("amd64") != "ProxySwitch.exe" || updateAssetName("arm64") != "ProxySwitch-arm64.exe" {
+	if updateAssetName("amd64") != "Proxi.exe" || updateAssetName("arm64") != "Proxi-arm64.exe" {
 		t.Error("附件名称应与 Makefile 的输出一致")
 	}
 }

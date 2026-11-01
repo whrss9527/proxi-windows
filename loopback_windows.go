@@ -16,7 +16,7 @@ import (
 )
 
 // 商店应用的回环豁免：列出应用和读取豁免不需要管理员权限；修改要管理员权限，由以管理员身份运行的
-// ProxySwitch.exe --loopback-exempt=文件 完成（文件里每行一个 SID，是修改后全部有豁免的应用）。
+// Proxi.exe --loopback-exempt=文件 完成（文件里每行一个 SID，是修改后全部有豁免的应用）。
 
 var (
 	firewallApi                               = syscall.NewLazyDLL(systemDir() + `\FirewallAPI.dll`)
@@ -165,7 +165,7 @@ func setLoopbackExempt(sids []string) error {
 	return nil
 }
 
-// runLoopbackHelper 是以管理员身份运行的 ProxySwitch.exe --loopback-exempt=文件：按文件设置回环豁免后退出，
+// runLoopbackHelper 是以管理员身份运行的 Proxi.exe --loopback-exempt=文件：按文件设置回环豁免后退出，
 // 出错时把原因写在「文件.error」里。
 func runLoopbackHelper(path string) int {
 	data, err := os.ReadFile(path)

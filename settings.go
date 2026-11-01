@@ -137,14 +137,14 @@ type GroupsInfo struct {
 }
 
 // LinksInfo 是链接的登记情况：Clash 是现在处理 clash:// 链接（机场网站的「一键导入」）的程序名，没有时为空；
-// ClashOurs 表示就是 ProxySwitch。
+// ClashOurs 表示就是 Proxi。
 type LinksInfo struct {
 	Clash     string `json:"clash"`
 	ClashOurs bool   `json:"clash_ours"`
 }
 
 // CoreInfo 是订阅使用的代理内核的情况。Custom 表示使用配置里指定的内核；InstalledVersion 是下载的内核的版本，
-// Version 是这个版本的 ProxySwitch 使用的版本；Downloadable 表示可以在程序里下载内核。
+// Version 是这个版本的 Proxi 使用的版本；Downloadable 表示可以在程序里下载内核。
 type CoreInfo struct {
 	Installed        bool             `json:"installed"`
 	Path             string           `json:"path"`
@@ -1080,7 +1080,7 @@ func (settings *SettingsServer) handleSetLoopback(writer http.ResponseWriter, re
 	writeJson(writer, http.StatusOK, info)
 }
 
-// handleClashLinks 让机场网站的「一键导入 Clash」（clash:// 链接）改由 ProxySwitch 处理。
+// handleClashLinks 让机场网站的「一键导入 Clash」（clash:// 链接）改由 Proxi 处理。
 func (settings *SettingsServer) handleClashLinks(writer http.ResponseWriter, request *http.Request) {
 	settings.respondState(writer, request, settings.backend.TakeOverClashLinks())
 }

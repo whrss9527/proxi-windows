@@ -384,7 +384,7 @@ function renderNav() {
   setHtml(nav, html`
     <div class="brand">
       ${brandLogo()}
-      <div class="brand-text"><div class="brand-name">ProxySwitch</div><div class="brand-version">版本 ${app.state.version}</div></div>
+      <div class="brand-text"><div class="brand-name">Proxi</div><div class="brand-version">版本 ${app.state.version}</div></div>
     </div>
     ${pages.map((page) => html`
       <button class="nav-item" data-action="goto" data-page="${page.id}" ${app.page === page.id ? raw('aria-current="page"') : ""} title="${page.label}">
@@ -1346,7 +1346,7 @@ function diagnosticsText() {
   const diagnostics = app.diagnostics;
   const state = app.state;
   const lines = [
-    `ProxySwitch ${state.version}（${state.platform}）`,
+    `Proxi ${state.version}（${state.platform}）`,
     `状态：${state.status.state}${state.status.profile ? ` · ${state.status.profile}` : ""}${state.status.health ? ` · 健康：${state.status.health}` : ""}`,
     `系统代理：${JSON.stringify(diagnostics.system)}（${diagnostics.system_source}）`,
     `连接：${diagnostics.connections.join("、")}；组策略统一设置：${diagnostics.machine_policy ? "是" : "否"}`,
@@ -1440,7 +1440,7 @@ function renameReferences(config, oldName, newName) {
 }
 
 // generalSettingKeys 是「常规」页上「恢复默认设置」会恢复的设置。
-const generalSettingKeys = ["startup_action", "disable_on_exit", "hotkey", "profile_hotkeys", "tray_click", "tray_double_click", "tray_icon", "speed_display", "notify_level", "notify_seconds", "off_mode", "guard_proxy", "health_check", "test_url", "theme", "settings_window", "editor"];
+const generalSettingKeys = ["startup_action", "disable_on_exit", "hotkey", "profile_hotkeys", "tray_click", "tray_double_click", "tray_icon", "floating_widget", "speed_display", "notify_level", "notify_seconds", "off_mode", "guard_proxy", "health_check", "test_url", "theme", "settings_window", "editor"];
 
 async function importConfig() {
   const file = await pickFile(".json,.jsonc,application/json");
@@ -1520,6 +1520,7 @@ document.addEventListener("keydown", (event) => {
 // ---------- 事件 ----------
 
 const actions = {
+  "reset-floating": () => saveConfig((config) => { config.floating_widget.positioned = false; }, "悬浮按钮已回到默认位置"),
   goto: (element) => goto(element.dataset.page),
   toggle: () => {
     const status = app.state.status;
@@ -1597,7 +1598,7 @@ const actions = {
   "open-location-settings": () => api("POST", "/api/open-url", { url: "ms-settings:privacy-location" }).catch((error) => toast(error.message, "danger", "无法打开")),
   "open-proxy-settings": () => api("POST", "/api/open-url", { url: "ms-settings:network-proxy" }).catch((error) => toast(error.message, "danger", "无法打开")),
   "export-config": () => {
-    downloadText("proxyswitch-config.json", JSON.stringify(app.config, null, 2) + "\n");
+    downloadText("proxi-config.json", JSON.stringify(app.config, null, 2) + "\n");
     toast("已导出，保存在浏览器的下载文件夹", "success", "导出完成");
   },
   "import-config": () => importConfig(),
@@ -1710,7 +1711,7 @@ const actions = {
   },
   "loopback-all": () => app.loopback && app.loopback.info && saveLoopback(app.loopback.info.apps.map((item) => item.sid)),
   "loopback-choose": () => openLoopbackDialog(),
-  "take-over-clash-links": () => runOperation("/api/links/clash", {}, "机场网站的「一键导入 Clash」现在会打开 ProxySwitch", "没有改过来"),
+  "take-over-clash-links": () => runOperation("/api/links/clash", {}, "机场网站的「一键导入 Clash」现在会打开 Proxi", "没有改过来"),
   "share-clear": async () => {
     try {
       app.shareActivity = await api("POST", "/api/share/clear");
@@ -1795,7 +1796,7 @@ const actions = {
       await api("POST", "/api/update/install");
       app.restarting = true;
       // 马上改掉窗口标题：新版本启动时按标题查找已打开的设置窗口，不能找到这个即将关闭的窗口。
-      document.title = "正在重新启动 · ProxySwitch";
+      document.title = "正在重新启动 · Proxi";
       setTimeout(() => window.close(), 2500);
     } catch (error) {
       app.installError = error.message;
@@ -2017,14 +2018,14 @@ connectionLost = (reason) => {
     return;
   }
   clearTimeout(pollTimer);
-  document.title = "已失效 · ProxySwitch 设置";
+  document.title = "已失效 · Proxi 设置";
   const blocker = document.createElement("div");
   blocker.className = "blocker";
   blocker.id = "blocker";
-  let title = reason === "expired" ? "这个设置页面已经失效" : "ProxySwitch 已经退出";
+  let title = reason === "expired" ? "这个设置页面已经失效" : "Proxi 已经退出";
   let message = reason === "expired"
-    ? "ProxySwitch 重新启动过。请关闭这个窗口，再从托盘菜单打开「设置」。"
-    : "托盘程序没有在运行。重新打开 ProxySwitch 后，从托盘菜单打开「设置」。";
+    ? "Proxi 重新启动过。请关闭这个窗口，再从托盘菜单打开「设置」。"
+    : "托盘程序没有在运行。重新打开 Proxi 后，从托盘菜单打开「设置」。";
   if (app.restarting) {
     title = "正在重新启动";
     message = "新版本启动后会打开新的设置窗口，可以关闭这个窗口。";

@@ -68,8 +68,8 @@ func (engine *Engine) WinHttpSuggestion() (proxy, bypass, reason string) {
 	return proxy, status.Profile.Bypass, ""
 }
 
-// WinHttpUsesCore 表示 WinHTTP 的代理是内置内核的地址。内核在 ProxySwitch 运行期间一直在（有订阅配置时），
-// 退出 ProxySwitch 后 Windows 更新等系统服务就连不上了。
+// WinHttpUsesCore 表示 WinHTTP 的代理是内置内核的地址。内核在 Proxi 运行期间一直在（有订阅配置时），
+// 退出 Proxi 后 Windows 更新等系统服务就连不上了。
 func (engine *Engine) WinHttpUsesCore(proxy string) bool {
 	return engine.config != nil && proxy != "" && proxy == coreServer(engine.config.Core.Port)
 }

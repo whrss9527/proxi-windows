@@ -20,10 +20,10 @@ import (
 	"unsafe"
 )
 
-// TUN 模式的内核：创建虚拟网卡要管理员权限，所以由以管理员身份运行的 ProxySwitch.exe --core-host 启动内核
-// （每次启动问一次）。宿主把内核放进“关闭即结束”的作业对象，ProxySwitch 退出或者发来停止信号时结束内核，
-// 内核退出时自己也退出；ProxySwitch 通过宿主的进程句柄知道内核退出了，照常经 REST API 管理内核。
-// 以管理员身份运行的只能是 ProxySwitch 下载的内核（按发布时写入的 SHA-256 校验）或者配置里指定的内核。
+// TUN 模式的内核：创建虚拟网卡要管理员权限，所以由以管理员身份运行的 Proxi.exe --core-host 启动内核
+// （每次启动问一次）。宿主把内核放进“关闭即结束”的作业对象，Proxi 退出或者发来停止信号时结束内核，
+// 内核退出时自己也退出；Proxi 通过宿主的进程句柄知道内核退出了，照常经 REST API 管理内核。
+// 以管理员身份运行的只能是 Proxi 下载的内核（按发布时写入的 SHA-256 校验）或者配置里指定的内核。
 
 var (
 	procCreateEventW           = kernel32.NewProc("CreateEventW")
@@ -107,7 +107,7 @@ func startElevatedCoreProcess(binary, dir, configPath, logPath string) (coreProc
 			return nil, fmt.Errorf("路径里有特殊字符，不能以管理员身份运行内核：%s", path)
 		}
 	}
-	name := fmt.Sprintf(`Local\ProxySwitchCore-%d-%d`, os.Getpid(), time.Now().UnixNano())
+	name := fmt.Sprintf(`Local\ProxiCore-%d-%d`, os.Getpid(), time.Now().UnixNano())
 	stop, _, err := procCreateEventW.Call(0, 1, 0, uintptr(unsafe.Pointer(utf16Pointer(name))))
 	if stop == 0 {
 		return nil, fmt.Errorf("无法创建事件：%v", err)
@@ -131,7 +131,7 @@ func startElevatedCoreProcess(binary, dir, configPath, logPath string) (coreProc
 
 // ---------- 宿主进程 ----------
 
-// runCoreHost 是以管理员身份运行的 ProxySwitch.exe --core-host：启动内核，等内核退出、ProxySwitch 退出或者收到
+// runCoreHost 是以管理员身份运行的 Proxi.exe --core-host：启动内核，等内核退出、Proxi 退出或者收到
 // 停止信号，后两种情况结束内核。退出码是内核的退出码（内核程序校验不过时是 coreHostBadBinary）。
 func runCoreHost(arguments []string) int {
 	options := map[string]string{}
@@ -155,7 +155,7 @@ func runCoreHost(arguments []string) int {
 	command.Stdout, command.Stderr = logFile, logFile
 	prepareCoreCommand(command)
 	if err := startVerifiedCore(command, dir); err != nil {
-		fmt.Fprintf(logFile, "ProxySwitch：%v\n", err)
+		fmt.Fprintf(logFile, "Proxi：%v\n", err)
 		if errors.Is(err, errCoreMismatch) {
 			return coreHostBadBinary
 		}
@@ -166,7 +166,7 @@ func runCoreHost(arguments []string) int {
 	parentHandle, _, _ := procOpenProcess.Call(synchronize, 0, uintptr(parent))
 	event, _, _ := procOpenEventW.Call(eventSynchronize, 0, uintptr(unsafe.Pointer(utf16Pointer(options["event"]))))
 	if child == 0 || parentHandle == 0 || event == 0 {
-		// 没法等 ProxySwitch 或停止信号时不留下没人管的内核。
+		// 没法等 Proxi 或停止信号时不留下没人管的内核。
 		_ = command.Process.Kill()
 		_ = command.Wait()
 		return exitFailure
@@ -193,7 +193,7 @@ func runCoreHost(arguments []string) int {
 
 var errCoreMismatch = errors.New("内核程序和发布时的不一致，没有以管理员身份运行")
 
-// startVerifiedCore 启动内核。ProxySwitch 下载的内核（在 dir 里）要和发布时写入的 SHA-256 一致；校验到启动期间
+// startVerifiedCore 启动内核。Proxi 下载的内核（在 dir 里）要和发布时写入的 SHA-256 一致；校验到启动期间
 // 独占打开程序文件，别人改不了它。
 func startVerifiedCore(command *exec.Cmd, dir string) error {
 	expected := coreExeSha256()

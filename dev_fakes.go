@@ -88,11 +88,11 @@ func serveFakeHttpProxy(client net.Conn, delay time.Duration) {
 	if request.Method == http.MethodConnect {
 		upstream, err := net.DialTimeout("tcp", request.Host, 5*time.Second)
 		if err != nil {
-			_, _ = io.WriteString(client, "HTTP/1.1 502 Bad Gateway\r\nProxy-Agent: ProxySwitch-dev\r\nContent-Length: 0\r\n\r\n")
+			_, _ = io.WriteString(client, "HTTP/1.1 502 Bad Gateway\r\nProxy-Agent: Proxi-dev\r\nContent-Length: 0\r\n\r\n")
 			return
 		}
 		defer upstream.Close()
-		_, _ = io.WriteString(client, "HTTP/1.1 200 Connection Established\r\nProxy-Agent: ProxySwitch-dev\r\n\r\n")
+		_, _ = io.WriteString(client, "HTTP/1.1 200 Connection Established\r\nProxy-Agent: Proxi-dev\r\n\r\n")
 		relay(client, reader, upstream)
 		return
 	}
@@ -102,7 +102,7 @@ func serveFakeHttpProxy(client net.Conn, delay time.Duration) {
 	}
 	upstream, err := net.DialTimeout("tcp", host, 5*time.Second)
 	if err != nil {
-		_, _ = io.WriteString(client, "HTTP/1.1 502 Bad Gateway\r\nProxy-Agent: ProxySwitch-dev\r\nContent-Length: 0\r\n\r\n")
+		_, _ = io.WriteString(client, "HTTP/1.1 502 Bad Gateway\r\nProxy-Agent: Proxi-dev\r\nContent-Length: 0\r\n\r\n")
 		return
 	}
 	defer upstream.Close()
@@ -116,7 +116,7 @@ func serveFakeHttpProxy(client net.Conn, delay time.Duration) {
 		return
 	}
 	defer response.Body.Close()
-	response.Header.Set("Proxy-Agent", "ProxySwitch-dev")
+	response.Header.Set("Proxy-Agent", "Proxi-dev")
 	_ = response.Write(client)
 }
 

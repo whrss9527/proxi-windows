@@ -27,6 +27,6 @@
 
 ## 本地验证
 
-Windows 上可以运行 `python tools/ui_test.py`；设置 `PROXYSWITCH_BROWSER_CHANNEL=msedge` 可使用本机 Edge。`PROXYSWITCH_GEO_DIR` 可指向已有的公开地理数据目录，减少测试对外网下载的依赖。按仓库约定，分别在未设置和设置 `PROXYSWITCH_CORE` 时运行界面测试。
+Windows 上可以运行 `python tools/ui_test.py`；设置 `PROXI_BROWSER_CHANNEL=msedge` 可使用本机 Edge。`PROXI_GEO_DIR` 可指向已有的公开地理数据目录，减少测试对外网下载的依赖。按仓库约定，分别在未设置和设置 `PROXI_CORE` 时运行界面测试。
 
-自动化测试使用隔离目录、模拟系统设置与测试代理，不向真实系统写代理设置。会修改真实 Windows 设置的 Go 测试仍须显式设置 `PROXYSWITCH_TEST_REGISTRY=1`，应交由 CI 或测试虚拟机执行。
+自动化测试使用隔离目录、模拟系统设置与测试代理，不向真实系统写代理设置。会修改真实 Windows 设置的 Go 测试仍须显式设置 `PROXI_TEST_REGISTRY=1`，应交由 CI 或测试虚拟机执行。

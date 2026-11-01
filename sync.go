@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-// 配置同步：代理配置和设置放在一个会同步的文件夹里（默认是 OneDrive 里的 ProxySwitch 文件夹，也可以是坚果云、Dropbox、
+// 配置同步：代理配置和设置放在一个会同步的文件夹里（默认是 OneDrive 里的 Proxi 文件夹，也可以是坚果云、Dropbox、
 // NAS 共享这类文件夹），在多台电脑之间同步。同步文件是文件夹里的 config.json：{"format", "updated", "device", "config"}，
 // config 是配置里和具体电脑无关的部分；代理内核、TUN、局域网共享、编辑器和同步本身这些本机的设置不同步，订阅和规则由每台
 // 电脑自己下载。本机改了就写上去，文件夹里的文件变了就读回来；两边都改过时以改动时间晚的为准。
@@ -25,22 +25,22 @@ const (
 	syncFormat   = 1
 	syncFileName = "config.json"
 	// syncFolderName 是 OneDrive 里放同步文件的文件夹。
-	syncFolderName = "ProxySwitch"
+	syncFolderName = "Proxi"
 	// syncFolderVariable 把默认的同步文件夹指到别处（开发和测试用）。
-	syncFolderVariable = "PROXYSWITCH_SYNC_DIR"
+	syncFolderVariable = "PROXI_SYNC_DIR"
 	syncPollInterval   = 2 * time.Second
 	// syncPushDelay：本机的配置改了之后等一会儿再写，连续的改动合并成一次。
 	syncPushDelay = time.Second
 )
 
-// SyncConfig 是配置同步的本机设置：是否开启；Folder 是同步文件夹，留空时用 OneDrive 里的 ProxySwitch 文件夹。
+// SyncConfig 是配置同步的本机设置：是否开启；Folder 是同步文件夹，留空时用 OneDrive 里的 Proxi 文件夹。
 type SyncConfig struct {
 	Enabled bool   `json:"enabled"`
 	Folder  string `json:"folder"`
 }
 
 // syncLocalKeys 是只和这台电脑有关、不同步的设置。
-var syncLocalKeys = map[string]bool{"core": true, "tun": true, "share": true, "editor": true, "sync": true, "notify": true}
+var syncLocalKeys = map[string]bool{"core": true, "tun": true, "share": true, "editor": true, "sync": true, "notify": true, "floating_widget": true}
 
 // syncFile 是同步文件：Updated 是这份配置改动的时间（RFC 3339），Device 是写入它的电脑。
 type syncFile struct {
@@ -55,7 +55,7 @@ func (file syncFile) updatedTime() time.Time {
 	return updated
 }
 
-// defaultSyncFolder 是默认的同步文件夹：OneDrive 里的 ProxySwitch 文件夹；没有 OneDrive 时为空。
+// defaultSyncFolder 是默认的同步文件夹：OneDrive 里的 Proxi 文件夹；没有 OneDrive 时为空。
 func defaultSyncFolder() string {
 	if folder := os.Getenv(syncFolderVariable); folder != "" {
 		return folder
@@ -63,6 +63,11 @@ func defaultSyncFolder() string {
 	for _, name := range []string{"OneDrive", "OneDriveConsumer", "OneDriveCommercial"} {
 		if root := os.Getenv(name); root != "" {
 			if info, err := os.Stat(root); err == nil && info.IsDir() {
+				// 已经在同步的旧目录继续使用，避免把多台电脑拆成两份互不更新的数据。
+				legacy := filepath.Join(root, legacyAppName)
+				if !fileExists(filepath.Join(root, syncFolderName, syncFileName)) && fileExists(filepath.Join(legacy, syncFileName)) {
+					return legacy
+				}
 				return filepath.Join(root, syncFolderName)
 			}
 		}
@@ -83,7 +88,7 @@ func syncFolderPath(config SyncConfig) (string, error) {
 
 func validateSyncConfig(config SyncConfig) error {
 	if folder := strings.TrimSpace(config.Folder); folder != "" && !filepath.IsAbs(folder) {
-		return fmt.Errorf("同步文件夹要填完整的路径，例如 D:\\坚果云\\ProxySwitch：%s", folder)
+		return fmt.Errorf("同步文件夹要填完整的路径，例如 D:\\坚果云\\Proxi：%s", folder)
 	}
 	return nil
 }
@@ -273,7 +278,7 @@ func readSyncFile(path string) (*syncFile, error) {
 		return nil, errors.New("同步文件的格式不对")
 	}
 	if file.Format > syncFormat {
-		return nil, errors.New("同步文件是更新版本的 ProxySwitch 写的，请先更新这台电脑上的 ProxySwitch")
+		return nil, errors.New("同步文件是更新版本的 Proxi 写的，请先更新这台电脑上的 Proxi")
 	}
 	return &file, nil
 }

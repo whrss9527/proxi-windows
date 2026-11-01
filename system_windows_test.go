@@ -11,10 +11,10 @@ import (
 	"unsafe"
 )
 
-// 修改真实系统设置的测试只在设置 PROXYSWITCH_TEST_REGISTRY=1 时运行（CI 和测试虚拟机里），结束后恢复原值。
+// 修改真实系统设置的测试只在设置 PROXI_TEST_REGISTRY=1 时运行（CI 和测试虚拟机里），结束后恢复原值。
 func requireRegistryTests(t *testing.T) {
-	if os.Getenv("PROXYSWITCH_TEST_REGISTRY") != "1" {
-		t.Skip("设置 PROXYSWITCH_TEST_REGISTRY=1 才运行会修改系统设置的测试")
+	if os.Getenv("PROXI_TEST_REGISTRY") != "1" {
+		t.Skip("设置 PROXI_TEST_REGISTRY=1 才运行会修改系统设置的测试")
 	}
 }
 

@@ -40,25 +40,25 @@ func TestNormalizeDiagnoseUrl(t *testing.T) {
 
 func TestParseRouteTrace(t *testing.T) {
 	cases := map[string]*RouteTrace{
-		"[TCP] 127.0.0.1:50000 --> www.youtube.com:443 match RuleSet(proxy-1) using ProxySwitch[香港 01 (IPLC)]": {Host: "www.youtube.com", Port: 443, Rule: "RuleSet(proxy-1)", Chain: "ProxySwitch[香港 01 (IPLC)]"},
-		"[TCP] 127.0.0.1:50000(chrome.exe) --> example.com:80 match Match using DIRECT":                        {Host: "example.com", Port: 80, Rule: "Match", Chain: "DIRECT"},
-		"[TCP] 127.0.0.1:50000 --> example.com:443 doesn't match any rule using DIRECT":                        {Host: "example.com", Port: 443, Rule: "没有命中任何规则", Chain: "DIRECT"},
-		"[TCP] 127.0.0.1:50000 --> [2001:db8::1]:443 using GLOBAL":                                             {Host: "2001:db8::1", Port: 443, Chain: "GLOBAL"},
-		"[TCP] dial ProxySwitch (match Match/) 127.0.0.1:50000 --> www.google.com:443 error: connect failed":   {Host: "www.google.com", Port: 443, Rule: "Match", Chain: "ProxySwitch", Error: "connect failed"},
-		"[TCP] dial DIRECT (match DomainSuffix/cn) 127.0.0.1:50000 --> a.cn:443 error: i/o timeout":            {Host: "a.cn", Port: 443, Rule: "DomainSuffix(cn)", Chain: "DIRECT", Error: "i/o timeout"},
-		"[TCP] dial 上游代理 127.0.0.1:50000 --> Example.COM:443 error: refused":                                   {Host: "example.com", Port: 443, Chain: "上游代理", Error: "refused"},
+		"[TCP] 127.0.0.1:50000 --> www.youtube.com:443 match RuleSet(proxy-1) using Proxi[香港 01 (IPLC)]": {Host: "www.youtube.com", Port: 443, Rule: "RuleSet(proxy-1)", Chain: "Proxi[香港 01 (IPLC)]"},
+		"[TCP] 127.0.0.1:50000(chrome.exe) --> example.com:80 match Match using DIRECT":                  {Host: "example.com", Port: 80, Rule: "Match", Chain: "DIRECT"},
+		"[TCP] 127.0.0.1:50000 --> example.com:443 doesn't match any rule using DIRECT":                  {Host: "example.com", Port: 443, Rule: "没有命中任何规则", Chain: "DIRECT"},
+		"[TCP] 127.0.0.1:50000 --> [2001:db8::1]:443 using GLOBAL":                                       {Host: "2001:db8::1", Port: 443, Chain: "GLOBAL"},
+		"[TCP] dial Proxi (match Match/) 127.0.0.1:50000 --> www.google.com:443 error: connect failed":   {Host: "www.google.com", Port: 443, Rule: "Match", Chain: "Proxi", Error: "connect failed"},
+		"[TCP] dial DIRECT (match DomainSuffix/cn) 127.0.0.1:50000 --> a.cn:443 error: i/o timeout":      {Host: "a.cn", Port: 443, Rule: "DomainSuffix(cn)", Chain: "DIRECT", Error: "i/o timeout"},
+		"[TCP] dial 上游代理 127.0.0.1:50000 --> Example.COM:443 error: refused":                             {Host: "example.com", Port: 443, Chain: "上游代理", Error: "refused"},
 		// 按程序分流时来源后面跟着程序名，程序名里可能有空格和括号。
-		"[TCP] dial ProxySwitch (match ProcessName/Some App (x86).exe) 127.0.0.1:50000(Some App (x86).exe) --> a.com:443 error: timeout": {Host: "a.com", Port: 443, Rule: "ProcessName(Some App (x86).exe)", Chain: "ProxySwitch", Error: "timeout"},
-		"[TCP] dial DIRECT 127.0.0.1:50000(proxyswitch.test, uid=1000) --> a.com:80 error: refused":                                      {Host: "a.com", Port: 80, Chain: "DIRECT", Error: "refused"},
-		"[UDP] 127.0.0.1:50000 --> 8.8.8.8:53 match Match using DIRECT":                                                                  nil,
-		"Start initial configuration in progress":                                                                                        nil,
+		"[TCP] dial Proxi (match ProcessName/Some App (x86).exe) 127.0.0.1:50000(Some App (x86).exe) --> a.com:443 error: timeout": {Host: "a.com", Port: 443, Rule: "ProcessName(Some App (x86).exe)", Chain: "Proxi", Error: "timeout"},
+		"[TCP] dial DIRECT 127.0.0.1:50000(proxi.test, uid=1000) --> a.com:80 error: refused":                                      {Host: "a.com", Port: 80, Chain: "DIRECT", Error: "refused"},
+		"[UDP] 127.0.0.1:50000 --> 8.8.8.8:53 match Match using DIRECT":                                                            nil,
+		"Start initial configuration in progress":                                                                                  nil,
 	}
 	for line, want := range cases {
 		if got := parseRouteTrace(line); !reflect.DeepEqual(got, want) {
 			t.Errorf("%s\n解析成 %+v，应为 %+v", line, got, want)
 		}
 	}
-	trace := parseRouteTrace("[TCP] 127.0.0.1:1 --> a.com:443 match Match using ProxySwitch[香港 01]")
+	trace := parseRouteTrace("[TCP] 127.0.0.1:1 --> a.com:443 match Match using Proxi[香港 01]")
 	if trace.Outbound() != "香港 01" || trace.IsDirect() {
 		t.Errorf("出口应是节点：%s", trace.Outbound())
 	}
@@ -130,7 +130,7 @@ func TestProbeUrl(t *testing.T) {
 		t.Errorf("对方不是 HTTPS：%+v", probe)
 	}
 
-	target, _ = url.Parse("https://proxyswitch-diagnose.invalid/")
+	target, _ = url.Parse("https://proxi-diagnose.invalid/")
 	if probe := probeUrl(ctx, target, nil, 3*time.Second); probe.Failure != "域名解析失败" {
 		t.Errorf("域名不存在：%+v", probe)
 	}
@@ -183,7 +183,7 @@ func TestCoreTraceConnection(t *testing.T) {
 		return core.TraceConnection(ctx, host, 80, func() DiagnoseProbe { return probeUrl(ctx, target, proxy, 5*time.Second) })
 	}
 	probe, trace := visit(coreTestHost)
-	if !probe.Ok || trace == nil || trace.Chain != "ProxySwitch[节点 A]" || trace.Outbound() != "节点 A" || trace.Rule != "Match" {
+	if !probe.Ok || trace == nil || trace.Chain != "Proxi[节点 A]" || trace.Outbound() != "节点 A" || trace.Rule != "Match" {
 		t.Errorf("应找到这次连接走的节点和规则：%+v %+v", probe, trace)
 	}
 	if delay := core.NodeDelay("pa", "节点 A", testUrl); delay <= 0 {
@@ -203,7 +203,7 @@ func TestCoreTraceConnection(t *testing.T) {
 		t.Fatal(err)
 	}
 	probe, trace = visit(coreTestHost)
-	if probe.Ok || trace == nil || trace.Error == "" || trace.Chain != "ProxySwitch" {
+	if probe.Ok || trace == nil || trace.Error == "" || trace.Chain != "Proxi" {
 		t.Errorf("节点连不上时应找到内核的报错：%+v %+v", probe, trace)
 	}
 	if delay := core.NodeDelay("pa", "坏节点", testUrl); delay != 0 {
@@ -239,15 +239,15 @@ func TestDiagnoseVerdict(t *testing.T) {
 		{"没开代理直连不通，没有订阅", DiagnoseFacts{Perspective: diagnosePc, Route: "off", Direct: failed}, "本机没开代理，直连又打不开", "open_proxies,copy_report"},
 		{"没开代理解析不到，有订阅", DiagnoseFacts{Perspective: diagnosePc, Route: "off", Direct: failed, TurnOn: "机场", DnsFailed: true}, "本机没开代理，直连又打不开", "turn_on,flush_dns,copy_report"},
 		{"没开代理解析不到，没有订阅", DiagnoseFacts{Perspective: diagnosePc, Route: "off", Direct: failed, DnsFailed: true}, "本机没开代理，直连又打不开", "open_proxies,flush_dns,copy_report"},
-		{"链路正常", DiagnoseFacts{Perspective: diagnosePc, Route: "subscription", UsesCore: true, Proxied: ok, ProxiedVia: "订阅配置", Trace: &RouteTrace{Rule: "Match", Chain: "ProxySwitch[香港 01]"}}, "链路正常", "flush_dns,copy_report"},
+		{"链路正常", DiagnoseFacts{Perspective: diagnosePc, Route: "subscription", UsesCore: true, Proxied: ok, ProxiedVia: "订阅配置", Trace: &RouteTrace{Rule: "Match", Chain: "Proxi[香港 01]"}}, "链路正常", "flush_dns,copy_report"},
 		{"设备最近没访问", DiagnoseFacts{Perspective: diagnoseDevice, ShareListening: true, Proxied: ok, DeviceConnections: &none}, "从这台电脑看链路是通的，但设备最近没有访问它", "open_share,copy_report"},
 		{"设备访问过", DiagnoseFacts{Perspective: diagnoseDevice, ShareListening: true, Proxied: ok, DeviceConnections: &some}, "链路正常", "copy_report"},
 		{"规则直连但不通", DiagnoseFacts{Perspective: diagnosePc, Host: "x.com", UsesCore: true, Proxied: failed, Direct: failed, Trace: &RouteTrace{Rule: "GeoIP(CN)", Chain: "DIRECT"}}, "规则把它分到了直连，但直连不通", "pin_to_proxy,copy_report"},
 		{"共享直连但不通", DiagnoseFacts{Perspective: diagnoseDevice, ShareListening: true, Proxied: failed, TurnOn: "机场", Trace: &RouteTrace{Rule: "Match", Chain: "DIRECT"}}, "直连不通", "turn_on,copy_report"},
 		{"转发给本机的代理失败", DiagnoseFacts{Perspective: diagnoseDevice, ShareListening: true, Proxied: failed, Trace: &RouteTrace{Rule: "Match", Chain: coreUpstreamProxy, Error: "refused"}}, "转发给本机的代理失败", "copy_report"},
 		{"被拦截", DiagnoseFacts{Perspective: diagnosePc, Host: "ads.com", UsesCore: true, Proxied: failed, Trace: &RouteTrace{Rule: "RuleSet(reject-1)", Chain: "REJECT"}}, "规则拦截了这个网站", "pin_to_proxy,copy_report"},
-		{"节点连不上", DiagnoseFacts{Perspective: diagnosePc, UsesCore: true, Proxied: failed, NodeDelay: &zero, Trace: &RouteTrace{Rule: "Match", Chain: "ProxySwitch", Error: "i/o timeout"}}, "当前节点连不上", "auto_select,test_nodes,copy_report"},
-		{"节点通但网站不通", DiagnoseFacts{Perspective: diagnosePc, UsesCore: true, Proxied: failed, NodeDelay: &fast, Trace: &RouteTrace{Rule: "Match", Chain: "ProxySwitch[日本 01]"}}, "节点能通，但这个网站经它打不开", "open_nodes,copy_report"},
+		{"节点连不上", DiagnoseFacts{Perspective: diagnosePc, UsesCore: true, Proxied: failed, NodeDelay: &zero, Trace: &RouteTrace{Rule: "Match", Chain: "Proxi", Error: "i/o timeout"}}, "当前节点连不上", "auto_select,test_nodes,copy_report"},
+		{"节点通但网站不通", DiagnoseFacts{Perspective: diagnosePc, UsesCore: true, Proxied: failed, NodeDelay: &fast, Trace: &RouteTrace{Rule: "Match", Chain: "Proxi[日本 01]"}}, "节点能通，但这个网站经它打不开", "open_nodes,copy_report"},
 		{"内核没记录判定", DiagnoseFacts{Perspective: diagnosePc, UsesCore: true, Proxied: failed}, "经代理访问失败", "copy_report"},
 		{"其他代理失败", DiagnoseFacts{Perspective: diagnosePc, Route: "profile", ProxiedVia: "「公司」（10.0.0.1:8080）", Proxied: failed, TurnOn: "机场"}, "经「公司」（10.0.0.1:8080）访问失败", "turn_on,copy_report"},
 	}
@@ -353,7 +353,7 @@ func TestSettingsDiagnoseFlow(t *testing.T) {
 	if job.Verdict == nil || job.Verdict.Headline != "链路正常" || job.Subscription != profileId {
 		t.Errorf("用订阅时链路正常：%+v", job)
 	}
-	if proxied := row(job, "proxied"); proxied.Outcome != "pass" || !strings.Contains(proxied.Summary, "走 ProxySwitch[节点 A]") {
+	if proxied := row(job, "proxied"); proxied.Outcome != "pass" || !strings.Contains(proxied.Summary, "走 Proxi[节点 A]") {
 		t.Errorf("经代理访问应说明走的节点：%+v", proxied)
 	}
 	if node := row(job, "node"); node.Outcome != "pass" || !strings.HasPrefix(node.Summary, "节点 A：") {

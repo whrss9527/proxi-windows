@@ -78,7 +78,7 @@ type AutoSwitch struct {
 	DefaultProfile string    `json:"default_profile"`
 }
 
-// CoreConfig 是订阅使用的代理内核（mihomo）的设置：Path 留空时使用 ProxySwitch 下载的内核，Port 是它的本地代理端口。
+// CoreConfig 是订阅使用的代理内核（mihomo）的设置：Path 留空时使用 Proxi 下载的内核，Port 是它的本地代理端口。
 type CoreConfig struct {
 	Path string `json:"path"`
 	Port int    `json:"port"`
@@ -91,36 +91,37 @@ type TunConfig struct {
 }
 
 type Config struct {
-	Hotkey          string        `json:"hotkey"`
-	ProfileHotkeys  string        `json:"profile_hotkeys"`
-	NotifyLevel     string        `json:"notify_level"`
-	NotifySeconds   int           `json:"notify_seconds"`
-	StartupAction   string        `json:"startup_action"`
-	OffMode         string        `json:"off_mode"`
-	DisableOnExit   bool          `json:"disable_on_exit"`
-	GuardProxy      bool          `json:"guard_proxy"`
-	HealthCheck     string        `json:"health_check"`
-	TrayClick       string        `json:"tray_click"`
-	TrayDoubleClick string        `json:"tray_double_click"`
-	TrayIcon        string        `json:"tray_icon"`
-	Theme           string        `json:"theme"`
-	SettingsWindow  string        `json:"settings_window"`
-	TestUrl         string        `json:"test_url"`
-	Editor          string        `json:"editor"`
-	CheckUpdates    bool          `json:"check_updates"`
-	SpeedDisplay    string        `json:"speed_display"`
-	UrlLinks        bool          `json:"url_links"`
-	PauseOnMetered  bool          `json:"pause_on_metered"`
-	Core            CoreConfig    `json:"core"`
-	Tun             TunConfig     `json:"tun"`
-	PolicyGroups    []PolicyGroup `json:"policy_groups"`
-	CustomRules     []CustomRule  `json:"custom_rules"`
-	RuleSets        []RuleSet     `json:"rule_sets"`
-	FinalPolicy     string        `json:"final_policy"`
-	Share           ShareConfig   `json:"share"`
-	Sync            SyncConfig    `json:"sync"`
-	AutoSwitch      AutoSwitch    `json:"auto_switch"`
-	Profiles        []Profile     `json:"profiles"`
+	Hotkey          string               `json:"hotkey"`
+	ProfileHotkeys  string               `json:"profile_hotkeys"`
+	NotifyLevel     string               `json:"notify_level"`
+	NotifySeconds   int                  `json:"notify_seconds"`
+	StartupAction   string               `json:"startup_action"`
+	OffMode         string               `json:"off_mode"`
+	DisableOnExit   bool                 `json:"disable_on_exit"`
+	GuardProxy      bool                 `json:"guard_proxy"`
+	HealthCheck     string               `json:"health_check"`
+	TrayClick       string               `json:"tray_click"`
+	TrayDoubleClick string               `json:"tray_double_click"`
+	TrayIcon        string               `json:"tray_icon"`
+	FloatingWidget  FloatingWidgetConfig `json:"floating_widget"`
+	Theme           string               `json:"theme"`
+	SettingsWindow  string               `json:"settings_window"`
+	TestUrl         string               `json:"test_url"`
+	Editor          string               `json:"editor"`
+	CheckUpdates    bool                 `json:"check_updates"`
+	SpeedDisplay    string               `json:"speed_display"`
+	UrlLinks        bool                 `json:"url_links"`
+	PauseOnMetered  bool                 `json:"pause_on_metered"`
+	Core            CoreConfig           `json:"core"`
+	Tun             TunConfig            `json:"tun"`
+	PolicyGroups    []PolicyGroup        `json:"policy_groups"`
+	CustomRules     []CustomRule         `json:"custom_rules"`
+	RuleSets        []RuleSet            `json:"rule_sets"`
+	FinalPolicy     string               `json:"final_policy"`
+	Share           ShareConfig          `json:"share"`
+	Sync            SyncConfig           `json:"sync"`
+	AutoSwitch      AutoSwitch           `json:"auto_switch"`
+	Profiles        []Profile            `json:"profiles"`
 	// 旧版配置的通知开关：读入时换算成 notify_level，保存时不再写出。
 	Notify *bool `json:"notify,omitempty"`
 }
@@ -152,7 +153,7 @@ func defaultConfig() *Config {
 }
 
 // defaultConfigText 是首次运行时写入的配置文件，字段说明都在注释里。
-const defaultConfigText = `// ProxySwitch 配置文件。推荐在托盘菜单「设置...」里图形化修改；手改保存后几秒内自动生效。
+const defaultConfigText = `// Proxi 配置文件。推荐在托盘菜单「设置...」里图形化修改；手改保存后几秒内自动生效。
 // 允许 // 注释和末尾逗号。
 {
   // 全局快捷键：开 / 关代理。Ctrl / Alt / Shift / Win 组合 + 字母、数字、F1~F24 等；留空不注册
@@ -184,6 +185,9 @@ const defaultConfigText = `// ProxySwitch 配置文件。推荐在托盘菜单�
   // 托盘图标：brand 应用标识与状态角标 / toggle 按配置颜色显示开关
   "tray_icon": "brand",
 
+  // 悬浮网速按钮：单击打开设置，拖动移动，右键菜单；位置只在本机保存
+  "floating_widget": {"enabled": false, "positioned": false, "x": 0, "y": 0},
+
   // 设置界面主题：system 跟随系统 / light 浅色 / dark 深色
   "theme": "system",
   // 设置界面打开方式：app 独立窗口（Edge 或 Chrome 应用模式）/ browser 默认浏览器
@@ -197,11 +201,11 @@ const defaultConfigText = `// ProxySwitch 配置文件。推荐在托盘菜单�
   "check_updates": true,
   // 托盘图标的提示和设置页里显示的实时网速：system 系统网络总速度 / core 只算内置代理内核的流量 / none 不显示
   "speed_display": "system",
-  // 网页链接：浏览器和脚本可以用 proxyswitch:// 链接操作 ProxySwitch（例如 proxyswitch://toggle）；
-  // 机场网站的「一键导入 Clash」按钮（clash:// 链接，没有其他程序处理时）会打开 ProxySwitch 添加订阅
+  // 网页链接：浏览器和脚本可以用 proxi:// 链接操作 Proxi（例如 proxi://toggle）；
+  // 机场网站的「一键导入 Clash」按钮（clash:// 链接，没有其他程序处理时）会打开 Proxi 添加订阅
   "url_links": true,
 
-  // 订阅使用的代理内核（mihomo）：path 留空使用 ProxySwitch 下载的内核，port 是它在本机提供代理的端口
+  // 订阅使用的代理内核（mihomo）：path 留空使用 Proxi 下载的内核，port 是它在本机提供代理的端口
   "core": { "path": "", "port": 17890 },
   // 按流量计费的网络（手机热点、设成按流量计费的 Wi-Fi 等）上暂停每天自动更新订阅和分流规则，手动更新不受影响
   "pause_on_metered": true,
@@ -241,7 +245,7 @@ const defaultConfigText = `// ProxySwitch 配置文件。推荐在托盘菜单�
   "share": { "enabled": false, "port": 17892, "allowed": "", "keep_awake": true, "keep_awake_on_battery": false },
 
   // 配置同步：代理配置和设置放在一个会同步的文件夹里，在多台电脑之间同步（内核、TUN、局域网共享、编辑器和同步本身
-  // 这些本机的设置不同步）。folder 留空时用 OneDrive 里的 ProxySwitch 文件夹
+  // 这些本机的设置不同步）。folder 留空时用 OneDrive 里的 Proxi 文件夹
   "sync": { "enabled": false, "folder": "" },
 
   // 按所在网络自动切换
@@ -780,7 +784,7 @@ func marshalConfigFile(config *Config) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	header := "// ProxySwitch 配置文件。推荐在托盘菜单「设置...」里图形化修改；手改保存后几秒内自动生效。\n" +
+	header := "// Proxi 配置文件。推荐在托盘菜单「设置...」里图形化修改；手改保存后几秒内自动生效。\n" +
 		"// 各字段说明见 " + repositoryUrl + "#配置文件\n"
 	return []byte("\xEF\xBB\xBF" + header + string(data) + "\n"), nil
 }

@@ -24,7 +24,7 @@ import (
 // 分流规则：把小火箭（Shadowrocket）、Surge 或 Clash（mihomo）格式的规则配置转换成内核（mihomo）的规则。
 //
 // 规则配置的 [Rule] 段从上到下匹配，第一条匹配的规则决定连接走代理、直连还是被拦截，FINAL 是都不匹配时的去向。
-// RULE-SET 和 DOMAIN-SET 引用外部的规则列表（Surge 或 QuantumultX 格式），由 ProxySwitch 一起下载并展开；
+// RULE-SET 和 DOMAIN-SET 引用外部的规则列表（Surge 或 QuantumultX 格式），由 Proxi 一起下载并展开；
 // [Proxy Group] 里的策略组按默认选项归为三种去向之一。内核做不到的规则（USER-AGENT、URL-REGEX 这类要解密 HTTPS
 // 才能判断的，以及 IP-ASN 等）跳过并计数；PROCESS-NAME 和 PROCESS-PATH 按连接来自的程序匹配。Clash 配置用顶层的 rules 列表，策略组看 proxy-groups，
 // RULE-SET 引用 rule-providers 里的规则集。
@@ -46,7 +46,7 @@ const (
 	ruleSetWorkers = 4
 )
 
-var ruleUserAgent = "ProxySwitch/" + appVersion
+var ruleUserAgent = "Proxi/" + appVersion
 
 // ruleEntry 是一条换成内核写法的规则，不含去向。
 type ruleEntry struct {
@@ -522,7 +522,7 @@ type policyRule struct {
 	name   string
 }
 
-// corePolicyName 是去向在内核配置里的名字：代理交给 ProxySwitch 组，也就是正在使用的订阅选中的节点。
+// corePolicyName 是去向在内核配置里的名字：代理交给 Proxi 组，也就是正在使用的订阅选中的节点。
 func corePolicyName(policy string) string {
 	switch policy {
 	case rulePolicyDirect:
@@ -822,7 +822,7 @@ func saveRuleList(coreDir string, set RuleSet, content []byte) (ruleSetDownload,
 // yamlPayloadPattern 认出 Clash 规则集的 YAML 写法：顶格的 payload: 列表。
 var yamlPayloadPattern = regexp.MustCompile(`(?m)^payload:`)
 
-// needsConversion 表示下载的内容是完整配置、要由 ProxySwitch 转换：小火箭 / Surge 的 [Rule] 段，或者 Clash 顶格的 rules: 列表
+// needsConversion 表示下载的内容是完整配置、要由 Proxi 转换：小火箭 / Surge 的 [Rule] 段，或者 Clash 顶格的 rules: 列表
 // （纯规则列表用的是 payload:）。
 func needsConversion(content []byte) bool {
 	for _, raw := range strings.Split(strings.TrimPrefix(string(content), "\xef\xbb\xbf"), "\n") {

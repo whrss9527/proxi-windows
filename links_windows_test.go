@@ -12,14 +12,14 @@ func TestCommandProgram(t *testing.T) {
 	for command, want := range map[string]string{
 		`"C:\Program Files\Clash Verge\clash-verge.exe" "%1"`: `C:\Program Files\Clash Verge\clash-verge.exe`,
 		`C:\Tools\clash.exe %1`:                               `C:\Tools\clash.exe`,
-		`"C:\Tools\ProxySwitch.exe",0`:                        `C:\Tools\ProxySwitch.exe`,
+		`"C:\Tools\Proxi.exe",0`:                              `C:\Tools\Proxi.exe`,
 		``:                                                    ``,
 	} {
 		if got := commandProgram(command); got != want {
 			t.Errorf("%s 的程序应是 %q：%q", command, want, got)
 		}
 	}
-	if !isOurLinkCommand(`"c:\tools\proxyswitch.EXE" "%1"`, `C:\Tools\ProxySwitch.exe`) || isOurLinkCommand(`"C:\Tools\clash.exe" "%1"`, `C:\Tools\ProxySwitch.exe`) {
+	if !isOurLinkCommand(`"c:\tools\proxi.EXE" "%1"`, `C:\Tools\Proxi.exe`) || isOurLinkCommand(`"C:\Tools\clash.exe" "%1"`, `C:\Tools\Proxi.exe`) {
 		t.Error("应按程序路径（不分大小写）判断是不是这个程序")
 	}
 	if handlerName(`"C:\Program Files\Clash Verge\clash-verge.exe" "%1"`) != "clash-verge" {
@@ -30,10 +30,10 @@ func TestCommandProgram(t *testing.T) {
 // 在当前用户下登记一个测试用的链接协议：登记、接管别的程序、交还。
 func TestLinkRegistration(t *testing.T) {
 	requireRegistryTests(t)
-	scheme := fmt.Sprintf("proxyswitch-test-%d", os.Getpid())
+	scheme := fmt.Sprintf("proxi-test-%d", os.Getpid())
 	root := classesKey + scheme
 	t.Cleanup(func() { _ = deleteRegistryTree(hkeyCurrentUser, root) })
-	ours := `C:\Tools\ProxySwitch.exe`
+	ours := `C:\Tools\Proxi.exe`
 	other := `"C:\Program Files\Clash Verge\clash-verge.exe" "%1"`
 	otherIcon := `"C:\Program Files\Clash Verge\clash-verge.exe",0`
 
@@ -41,7 +41,7 @@ func TestLinkRegistration(t *testing.T) {
 	if err := registerLink(scheme, "测试", ours); err != nil {
 		t.Fatal(err)
 	}
-	if command, isOurs := linkHandler(scheme, ours); !isOurs || command != `"C:\Tools\ProxySwitch.exe" "%1"` {
+	if command, isOurs := linkHandler(scheme, ours); !isOurs || command != `"C:\Tools\Proxi.exe" "%1"` {
 		t.Errorf("登记后应由这个程序处理：%q", command)
 	}
 	key, err := openRegistryKey(hkeyCurrentUser, root, keyRead)

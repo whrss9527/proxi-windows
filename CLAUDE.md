@@ -8,7 +8,7 @@
 - 版本号：新功能升次版本号（2.2.0 升到 2.3.0），只修问题升修订号（2.2.0 升到 2.2.1）。先看 main 上最新的版本和标签，别和别的分支撞号。
 - 不会自动合并的情况：测试没过；是草稿；测试期间 main 有了新提交（把 main 合进分支再推一次，会重新测试）；从 fork 来的合并请求。
 - 也可以在 Actions 页面手动运行 release 工作流：填新的版本号时在 main 的最新提交上打标签再发布，填已有的标签时重新上传附件。
-- 发布的附件是安装包 `ProxySwitch-Setup.exe`、两个 exe、源码包和 SHA256SUMS.txt。仓库配置了 SignPath 时发布流程会给 exe 和安装包签名，要在 SignPath 里批准，见 docs/signing.md。
+- 发布的附件是安装包 `Proxi-Setup.exe`、两个 exe、源码包和 SHA256SUMS.txt。仓库配置了 SignPath 时发布流程会给 exe 和安装包签名，要在 SignPath 里批准，见 docs/signing.md。
 
 ## 写法
 
@@ -18,7 +18,7 @@
 
 ## 测试
 
-- `make test`：静态检查（含 Windows 平台）和单元测试。设置 `PROXYSWITCH_CORE` 为 mihomo 程序的路径才会跑内核相关的测试。
-- `make ui-test`：设置页的浏览器测试（需要 Python Playwright），同样可以设置 `PROXYSWITCH_CORE`。
+- `make test`：静态检查（含 Windows 平台）和单元测试。设置 `PROXI_CORE` 为 mihomo 程序的路径才会跑内核相关的测试。
+- `make ui-test`：设置页的浏览器测试（需要 Python Playwright），同样可以设置 `PROXI_CORE`。
 - 改了界面就把两种测试都跑一遍：没有内核时和有内核时走的流程不一样。
-- 安装包：`make windows installer`（需要 NSIS 的 makensis）能在本地打包；真正的安装、覆盖安装和卸载由 CI 在 Windows 上用 `tools/installer_test.ps1` 走一遍。改了托盘窗口的类名或单实例互斥量的名字，要同时改 `installer/ProxySwitch.nsi`。
+- 安装包：`make windows installer`（需要 NSIS 的 makensis）能在本地打包；真正的安装、覆盖安装和卸载由 CI 在 Windows 上用 `tools/installer_test.ps1` 走一遍。改了托盘窗口的类名或单实例互斥量的名字，要同时改 `installer/Proxi.nsi`。

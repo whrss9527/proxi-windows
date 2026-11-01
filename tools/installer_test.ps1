@@ -1,8 +1,8 @@
-﻿# 安装包的端到端测试（Windows）：静默安装、覆盖安装（升级）、检查装好的东西，再用 ProxySwitch.exe --uninstall --quiet
+﻿# 安装包的端到端测试（Windows）：静默安装、覆盖安装（升级）、检查装好的东西，再用 Proxi.exe --uninstall --quiet
 # 卸载，检查程序、开始菜单快捷方式、卸载项、开机自启和链接的登记都清理掉了，配置留着。
 # 会改当前用户的注册表和开始菜单，在 CI 或者测试用的电脑上运行。
 #
-# 用法：pwsh tools/installer_test.ps1 -Installer dist/ProxySwitch-Setup.exe [-Version 2.4.0]
+# 用法：pwsh tools/installer_test.ps1 -Installer dist/Proxi-Setup.exe [-Version 2.4.0]
 param(
     [Parameter(Mandatory = $true)][string]$Installer,
     # 安装包的版本号，默认取 Makefile 里的 VERSION。
@@ -24,13 +24,13 @@ if (-not $Version) {
     $Version = (Select-String -Path (Join-Path $PSScriptRoot "..\Makefile") -Pattern '^VERSION \?= (.+)$').Matches[0].Groups[1].Value.Trim()
 }
 $Installer = (Resolve-Path $Installer).Path
-$installDir = Join-Path $env:LOCALAPPDATA "Programs\ProxySwitch"
-$exe = Join-Path $installDir "ProxySwitch.exe"
-$uninstallKey = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\ProxySwitch"
-$shortcut = Join-Path ([Environment]::GetFolderPath("Programs")) "ProxySwitch.lnk"
+$installDir = Join-Path $env:LOCALAPPDATA "Programs\Proxi"
+$exe = Join-Path $installDir "Proxi.exe"
+$uninstallKey = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\Proxi"
+$shortcut = Join-Path ([Environment]::GetFolderPath("Programs")) "Proxi.lnk"
 $runKey = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
-$linkKey = "HKCU:\Software\Classes\proxyswitch"
-$dataDir = Join-Path $env:APPDATA "ProxySwitch"
+$linkKey = "HKCU:\Software\Classes\proxi"
+$dataDir = Join-Path $env:APPDATA "Proxi"
 $config = Join-Path $dataDir "config.jsonc"
 
 function Install {
@@ -39,30 +39,30 @@ function Install {
 
 # ---------- 安装 ----------
 Check ((Install) -eq 0) "静默安装成功"
-Check (Test-Path $exe) "程序装到 %LOCALAPPDATA%\Programs\ProxySwitch"
-Check (Test-Path $shortcut) "开始菜单里有 ProxySwitch"
+Check (Test-Path $exe) "程序装到 %LOCALAPPDATA%\Programs\Proxi"
+Check (Test-Path $shortcut) "开始菜单里有 Proxi"
 $entry = Get-ItemProperty $uninstallKey
-Check ($entry.DisplayName -eq "ProxySwitch" -and $entry.InstallLocation -eq $installDir) "「设置 → 应用」里有卸载项，记着安装目录"
+Check ($entry.DisplayName -eq "Proxi" -and $entry.InstallLocation -eq $installDir) "「设置 → 应用」里有卸载项，记着安装目录"
 Check ($entry.DisplayVersion -eq $Version) "卸载项显示的版本是 $Version"
-Check ($entry.UninstallString -eq "`"$exe`" --uninstall" -and $entry.QuietUninstallString -eq "`"$exe`" --uninstall --quiet") "卸载项执行 ProxySwitch.exe --uninstall"
+Check ($entry.UninstallString -eq "`"$exe`" --uninstall" -and $entry.QuietUninstallString -eq "`"$exe`" --uninstall --quiet") "卸载项执行 Proxi.exe --uninstall"
 Check ($entry.StartMenuShortcut -eq $shortcut) "卸载项记着开始菜单快捷方式的位置"
 Check ($entry.EstimatedSize -gt 1000) "卸载项有占用空间"
-Check ((Get-Item $exe).VersionInfo.ProductName -eq "ProxySwitch") "装的是 ProxySwitch 的程序"
+Check ((Get-Item $exe).VersionInfo.ProductName -eq "Proxi") "装的是 Proxi 的程序"
 
 # ---------- 覆盖安装（升级） ----------
 Check ((Install) -eq 0) "覆盖安装成功"
 Check ((Test-Path $exe) -and -not (Test-Path "$exe.old")) "覆盖安装后程序还在，没有留下旧程序文件"
-Check ((Get-ChildItem $installDir).Count -eq 1) "安装目录里只有 ProxySwitch.exe"
+Check ((Get-ChildItem $installDir).Count -eq 1) "安装目录里只有 Proxi.exe"
 
 # ---------- 卸载 ----------
-# 模拟程序运行时做的登记：开机自启、proxyswitch:// 链接；再放一份配置，静默卸载应该留着它。
+# 模拟程序运行时做的登记：开机自启、proxi:// 链接；再放一份配置，静默卸载应该留着它。
 # 新建的用户（例如 CI 的机器）可能还没有 Run 这个键。
 if (-not (Test-Path $runKey)) {
     New-Item -Path $runKey | Out-Null
 }
-New-ItemProperty -Path $runKey -Name "ProxySwitch" -Value "`"$exe`" --autostart" -PropertyType String -Force | Out-Null
+New-ItemProperty -Path $runKey -Name "Proxi" -Value "`"$exe`" --autostart" -PropertyType String -Force | Out-Null
 New-Item -Path "$linkKey\shell\open\command" -Force | Out-Null
-Set-ItemProperty -Path $linkKey -Name "(default)" -Value "URL:ProxySwitch"
+Set-ItemProperty -Path $linkKey -Name "(default)" -Value "URL:Proxi"
 New-ItemProperty -Path $linkKey -Name "URL Protocol" -Value "" -PropertyType String -Force | Out-Null
 Set-ItemProperty -Path "$linkKey\shell\open\command" -Name "(default)" -Value "`"$exe`" `"%1`""
 New-Item -ItemType Directory -Path $dataDir -Force | Out-Null
@@ -81,11 +81,11 @@ while ((Test-Path $installDir) -and (Get-Date) -lt $deadline) {
 Check (-not (Test-Path $installDir)) "卸载后删掉了程序和安装目录"
 Check (-not (Test-Path $uninstallKey)) "卸载后删掉了卸载项"
 Check (-not (Test-Path $shortcut)) "卸载后删掉了开始菜单的快捷方式"
-Check ($null -eq (Get-ItemProperty $runKey -Name "ProxySwitch" -ErrorAction SilentlyContinue)) "卸载后取消了开机自启"
-Check (-not (Test-Path $linkKey)) "卸载后取消了 proxyswitch:// 链接的登记"
+Check ($null -eq (Get-ItemProperty $runKey -Name "Proxi" -ErrorAction SilentlyContinue)) "卸载后取消了开机自启"
+Check (-not (Test-Path $linkKey)) "卸载后取消了 proxi:// 链接的登记"
 Check (Test-Path $config) "静默卸载留着配置"
 Start-Sleep -Seconds 2
-Check (@(Get-ChildItem $env:TEMP -Filter "proxyswitch-uninstall-*.cmd" -ErrorAction SilentlyContinue).Count -eq 0) "删除用的批处理删掉了自己"
+Check (@(Get-ChildItem $env:TEMP -Filter "proxi-uninstall-*.cmd" -ErrorAction SilentlyContinue).Count -eq 0) "删除用的批处理删掉了自己"
 if (-not $hadConfig) {
     Remove-Item -Recurse -Force $dataDir -ErrorAction SilentlyContinue
 }
@@ -95,6 +95,48 @@ Check ((Install) -eq 0) "卸载后重新安装成功"
 Check ((Test-Path $exe) -and (Test-Path $uninstallKey)) "重新安装后程序和卸载项都在"
 $final = Start-Process -FilePath $exe -ArgumentList "--uninstall", "--quiet" -Wait -PassThru
 Check ($final.ExitCode -eq 0) "再次卸载成功"
+
+# ---------- 从旧名称升级 ----------
+# 旧程序位置只使用默认目录；已有旧安装时不执行此用例，避免碰到测试之外的文件。
+$legacyDir = Join-Path $env:LOCALAPPDATA "Programs\ProxySwitch"
+$legacyKey = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\ProxySwitch"
+if ((Test-Path -LiteralPath $legacyDir) -or (Test-Path -LiteralPath $legacyKey)) {
+    Check $false "旧版默认位置已有内容，未执行迁移测试"
+} else {
+    Check ((Install) -eq 0) "准备更名迁移用的程序"
+    $fixtureBytes = [IO.File]::ReadAllBytes($exe)
+    $cleanup = Start-Process -FilePath $exe -ArgumentList "--uninstall", "--quiet" -Wait -PassThru -WindowStyle Hidden
+    Start-Sleep -Seconds 2
+    $savedAppData = $env:APPDATA
+    $caseRoot = Join-Path ([IO.Path]::GetTempPath()) ("proxi-brand-" + [guid]::NewGuid().ToString('N'))
+    $env:APPDATA = $caseRoot
+    try {
+        $oldData = Join-Path $caseRoot "ProxySwitch"
+        $newData = Join-Path $caseRoot "Proxi"
+        New-Item -ItemType Directory -Path $legacyDir,$oldData -Force | Out-Null
+        [IO.File]::WriteAllBytes((Join-Path $legacyDir "ProxySwitch.exe"),$fixtureBytes)
+        Set-Content -LiteralPath (Join-Path $legacyDir "user.keep") -Value "用户文件不能删除"
+        [IO.File]::WriteAllText((Join-Path $oldData "config.jsonc"),'{"profiles":[],"tray_click":"settings","theme":"dark"}')
+        $originalHash = (Get-FileHash -LiteralPath (Join-Path $oldData "config.jsonc")).Hash
+        New-Item -Path $legacyKey -Force | Out-Null
+        New-ItemProperty -Path $legacyKey -Name InstallLocation -Value $legacyDir -PropertyType String -Force | Out-Null
+        Check ((Install) -eq 0) "旧名称安装版可以升级"
+        Check ((Test-Path -LiteralPath $exe) -and -not (Test-Path -LiteralPath $legacyKey)) "升级后只登记 Proxi"
+        Check (-not (Test-Path -LiteralPath (Join-Path $legacyDir 'ProxySwitch.exe'))) "旧程序文件已替换"
+        Check (Test-Path -LiteralPath (Join-Path $legacyDir 'user.keep')) "旧目录中的用户文件保留"
+        $app = Start-Process -FilePath $exe -PassThru -WindowStyle Hidden
+        $deadline = (Get-Date).AddSeconds(15)
+        while (-not (Test-Path -LiteralPath (Join-Path $newData 'config.jsonc')) -and (Get-Date) -lt $deadline) { Start-Sleep -Milliseconds 200 }
+        Check (Test-Path -LiteralPath (Join-Path $newData 'config.jsonc')) "首次运行自动迁移旧配置"
+        $migrated = Get-Content -LiteralPath (Join-Path $newData 'config.jsonc') -Raw | ConvertFrom-Json
+        Check ($migrated.tray_click -eq 'settings' -and $migrated.theme -eq 'dark') "点击偏好和主题完整保留"
+        Check ((Get-FileHash -LiteralPath (Join-Path $oldData 'config.jsonc')).Hash -eq $originalHash) "迁移前的数据作为备份保留"
+        $cleanup = Start-Process -FilePath $exe -ArgumentList "--uninstall", "--quiet" -Wait -PassThru -WindowStyle Hidden
+        Check ($cleanup.ExitCode -eq 0) "迁移后仍能正常卸载"
+    } finally {
+        $env:APPDATA = $savedAppData
+    }
+}
 
 if ($failures -gt 0) {
     Write-Host "$failures 项失败"

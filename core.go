@@ -67,7 +67,7 @@ type CoreTunStatus struct {
 	Error  string `json:"error,omitempty"`
 }
 
-// coreProcess 是运行中的内核：ProxySwitch 直接启动的进程，或者 TUN 模式下以管理员身份运行的宿主进程
+// coreProcess 是运行中的内核：Proxi 直接启动的进程，或者 TUN 模式下以管理员身份运行的宿主进程
 // （见 core_windows.go），宿主退出时内核随之结束。
 type coreProcess interface {
 	Pid() int
@@ -496,7 +496,7 @@ func (core *Core) start(settings CoreSettings) error {
 	return nil
 }
 
-// watch 等待内核退出；不是 ProxySwitch 让它退出的，就记一次崩溃并让后台 goroutine 重新启动它。
+// watch 等待内核退出；不是 Proxi 让它退出的，就记一次崩溃并让后台 goroutine 重新启动它。
 func (core *Core) watch(process coreProcess, exited chan struct{}) {
 	err := process.Wait()
 	close(exited)

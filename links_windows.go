@@ -15,10 +15,10 @@ import (
 
 const (
 	classesKey      = `Software\Classes\`
-	linkBackupValue = "ProxySwitchBackup"
+	linkBackupValue = legacyLinkBackupValue
 )
 
-// linkOpenCommand 是打开链接时执行的命令：ProxySwitch.exe "链接"。
+// linkOpenCommand 是打开链接时执行的命令：Proxi.exe "链接"。
 func linkOpenCommand(executable string) string {
 	return `"` + executable + `" "%1"`
 }
@@ -86,7 +86,7 @@ func setBackedUpDefault(path, value, executable string) error {
 	}
 	defer key.Close()
 	current, _ := key.String("")
-	if current != "" && current != value && !isOurLinkCommand(current, executable) {
+	if current != "" && current != value && !isOurLinkCommand(current, executable) && !legacyOwnedCommand(current) {
 		if _, err := key.String(linkBackupValue); errors.Is(err, errValueNotFound) {
 			if err := key.SetString(linkBackupValue, current); err != nil {
 				return err
@@ -136,17 +136,20 @@ func restoreBackedUpDefault(path, executable string) error {
 	return key.DeleteValue(linkBackupValue)
 }
 
-// applyLinks 按配置登记或取消链接：开启时 proxyswitch:// 登记给这个程序，clash:// 在没有其他程序处理时也登记。
+// applyLinks 按配置登记或取消链接：开启时 proxi:// 登记给这个程序，clash:// 在没有其他程序处理时也登记。
 func applyLinks(enabled bool) error {
 	executable, err := os.Executable()
 	if err != nil {
 		return err
 	}
 	if !enabled {
-		return errors.Join(unregisterLink(linkScheme, executable), unregisterLink(clashLinkScheme, executable))
+		return errors.Join(unregisterLink(linkScheme, executable), unregisterLink(legacyLinkScheme, executable), unregisterLink(clashLinkScheme, executable))
 	}
-	err = registerLink(linkScheme, "ProxySwitch", executable)
-	if command, ours := linkHandler(clashLinkScheme, executable); command == "" || ours {
+	err = registerLink(linkScheme, "Proxi", executable)
+	if command, ours := linkHandler(legacyLinkScheme, executable); ours || legacyOwnedCommand(command) {
+		err = errors.Join(err, registerLink(legacyLinkScheme, appName, executable))
+	}
+	if command, ours := linkHandler(clashLinkScheme, executable); command == "" || ours || legacyOwnedCommand(command) {
 		err = errors.Join(err, registerLink(clashLinkScheme, "clash", executable))
 	}
 	return err
@@ -161,7 +164,7 @@ func takeOverClashLinks() error {
 	return registerLink(clashLinkScheme, "clash", executable)
 }
 
-// TakeOverClashLinks 让机场网站的「一键导入 Clash」按钮改由 ProxySwitch 处理。
+// TakeOverClashLinks 让机场网站的「一键导入 Clash」按钮改由 Proxi 处理。
 func (app *App) TakeOverClashLinks() error {
 	return takeOverClashLinks()
 }

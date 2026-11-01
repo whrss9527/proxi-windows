@@ -25,7 +25,7 @@ func (elevatedTestProcess) Elevated() bool {
 // useTestTunDevice 让内核建不出虚拟网卡（名字太长），只记一条日志：测试时不能真的改这台电脑的路由。
 func useTestTunDevice(t *testing.T) {
 	original := coreTunDevice
-	coreTunDevice = "ProxySwitchTestNameTooLong"
+	coreTunDevice = "ProxiTestNameTooLong"
 	t.Cleanup(func() { coreTunDevice = original })
 }
 
@@ -47,7 +47,7 @@ func TestCoreConfigTun(t *testing.T) {
 	config := parse(text)
 	tun, _ := config["tun"].(map[string]any)
 	dns, _ := config["dns"].(map[string]any)
-	if tun["enable"] != true || tun["auto-route"] != true || tun["stack"] != "gvisor" || tun["device"] != "ProxySwitch" {
+	if tun["enable"] != true || tun["auto-route"] != true || tun["stack"] != "gvisor" || tun["device"] != "Proxi" {
 		t.Errorf("TUN 设置不对：%v", tun)
 	}
 	if dns["enable"] != true || dns["enhanced-mode"] != "fake-ip" || !strings.Contains(string(text), "msftconnecttest.com") {
@@ -55,9 +55,9 @@ func TestCoreConfigTun(t *testing.T) {
 	}
 
 	// 内核认得这份配置（-t 只检查，不建虚拟网卡）。
-	binary := os.Getenv("PROXYSWITCH_CORE")
+	binary := os.Getenv("PROXI_CORE")
 	if binary == "" {
-		t.Skip("设置 PROXYSWITCH_CORE 为 mihomo 程序的路径才用内核检查配置")
+		t.Skip("设置 PROXI_CORE 为 mihomo 程序的路径才用内核检查配置")
 	}
 	dir := t.TempDir()
 	if err := writeSubscriptionFile(dir, "p1", []byte("proxies:\n  - {name: a, type: http, server: 127.0.0.1, port: 1}\n")); err != nil {

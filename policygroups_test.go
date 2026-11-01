@@ -87,7 +87,7 @@ func TestPolicyGroupValidation(t *testing.T) {
 		{`{"name": "港,台"}`, ``, "不能有逗号"},
 		{`{"name": "港，台"}`, ``, "不能有逗号"},
 		{`{"name": "direct"}`, ``, "内核保留的名字"},
-		{`{"name": "ProxySwitch"}`, ``, "内核保留的名字"},
+		{`{"name": "Proxi"}`, ``, "内核保留的名字"},
 		{`{"name": "自动选择"}`, ``, "内核保留的名字"},
 		{`{"name": "流媒体"}, {"name": "流媒体", "type": "url-test"}`, ``, "有两个策略组都叫「流媒体」"},
 		{`{"name": "pa1-auto"}`, ``, "和配置「机场」的 id 重名"},
@@ -168,7 +168,7 @@ func TestPolicyGroupCoreConfig(t *testing.T) {
 	if strings.Join(order[len(order)-4:], ",") != "流媒体,Telegram,备用,分流" {
 		t.Errorf("策略组应按配置里的顺序排在后面：%v", order)
 	}
-	if group := byName["流媒体"]; group.Type != "select" || strings.Join(group.Proxies, ",") != "ProxySwitch,pb2-auto,DIRECT" || strings.Join(group.Use, ",") != "pb2-nodes" || group.Filter != "(?i)港|HK" {
+	if group := byName["流媒体"]; group.Type != "select" || strings.Join(group.Proxies, ",") != "Proxi,pb2-auto,DIRECT" || strings.Join(group.Use, ",") != "pb2-nodes" || group.Filter != "(?i)港|HK" {
 		t.Errorf("手动选择的组：跟随节点、自动选择、直连，加上正在使用的订阅里筛出来的节点：%+v", group)
 	}
 	if group := byName["Telegram"]; group.Type != "url-test" || len(group.Proxies) != 0 || group.Url != settings.TestUrl || group.Interval != groupHealthInterval || group.Tolerance != groupTolerance || !group.Lazy || group.Filter != "" {
@@ -180,14 +180,14 @@ func TestPolicyGroupCoreConfig(t *testing.T) {
 	if group := byName["分流"]; group.Type != "load-balance" || group.Strategy != "round-robin" {
 		t.Errorf("负载均衡的组轮流用节点：%+v", group)
 	}
-	for _, rule := range []string{"DOMAIN-SUFFIX,netflix.com,流媒体", "DOMAIN-SUFFIX,t.me,Telegram", "DOMAIN-SUFFIX,example.org,ProxySwitch"} {
+	for _, rule := range []string{"DOMAIN-SUFFIX,netflix.com,流媒体", "DOMAIN-SUFFIX,t.me,Telegram", "DOMAIN-SUFFIX,example.org,Proxi"} {
 		if !contains(config.Rules, rule) {
 			t.Errorf("自定义规则应指向策略组，组已删除时走节点：缺少 %s\n%v", rule, config.Rules)
 		}
 	}
 
 	// 选中的成员在内核里的名字，和读回来时的写法。
-	for node, member := range map[string]string{"": "ProxySwitch", "自动选择": "pb2-auto", "DIRECT": "DIRECT", "香港 01": "香港 01"} {
+	for node, member := range map[string]string{"": "Proxi", "自动选择": "pb2-auto", "DIRECT": "DIRECT", "香港 01": "香港 01"} {
 		if got := coreGroupMember(node, "pb2"); got != member {
 			t.Errorf("%q 在内核里应是 %q：%q", node, member, got)
 		}
@@ -229,7 +229,7 @@ func TestEnginePolicyGroups(t *testing.T) {
 	if err := engine.UseProfile("本机"); err != nil {
 		t.Fatal(err)
 	}
-	// 用的不是订阅时，节点来自第一个已下载的订阅（内核的 ProxySwitch 组这时默认选它）。
+	// 用的不是订阅时，节点来自第一个已下载的订阅（内核的 Proxi 组这时默认选它）。
 	settings := core.last()
 	if settings.GroupSource != first.Id || len(settings.PolicyGroups) != 2 || !contains(settings.CustomRules, "DOMAIN-SUFFIX,netflix.com,流媒体") {
 		t.Errorf("策略组应交给内核，节点来自第一个订阅：%+v", settings)
@@ -329,6 +329,15 @@ func TestCoreWithPolicyGroups(t *testing.T) {
 	}
 	if states[0].Now != "香港 02" || states[0].Current != "香港 02" || strings.Join(values, ",") != ",自动选择,DIRECT,香港 01,香港 02" || strings.Join(labels, ",") != "跟随节点,自动选择,直连,香港 01,香港 02" {
 		t.Errorf("手动选择的组的状态不对：%+v", states[0])
+	}
+	// 内核加载完成后仍会异步测速，等自动选择组完成首次选择再检查状态。
+	deadline := time.Now().Add(5 * time.Second)
+	for states[1].Current == "" && time.Now().Before(deadline) {
+		time.Sleep(50 * time.Millisecond)
+		states, err = core.GroupStates(groups, "pa", coreApiTimeout)
+		if err != nil || len(states) != 2 {
+			t.Fatalf("等待自动选择组：%+v %v", states, err)
+		}
 	}
 	if states[1].Type != groupUrlTest || states[1].Current != "日本 01" || len(states[1].Members) != 1 || !states[1].Members[0].Node {
 		t.Errorf("自动选择的组只有筛出来的节点：%+v", states[1])

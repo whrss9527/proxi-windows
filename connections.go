@@ -33,7 +33,7 @@ const (
 
 // ConnectionRecord 是连接页里的一条连接。Client 是来源 IP（本机是 127.0.0.1，共享的设备是它的局域网地址），Process 是
 // 发起连接的程序（本机的连接才有）；Chains 是内核给的出口链：第一个是实际的出口（节点、DIRECT、上游代理），最后一个是
-// 规则指到的策略（ProxySwitch 或者某个策略组）；Share 表示经局域网共享的入口。
+// 规则指到的策略（Proxi 或者某个策略组）；Share 表示经局域网共享的入口。
 type ConnectionRecord struct {
 	Id       string   `json:"id"`
 	Client   string   `json:"client"`

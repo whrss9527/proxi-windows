@@ -13,18 +13,18 @@ import (
 	"time"
 )
 
-const jobTestRole = "PROXYSWITCH_JOB_TEST"
+const jobTestRole = "PROXI_JOB_TEST"
 
-// ProxySwitch 被强行结束（崩溃、在任务管理器里结束）时，作业对象让内核跟着结束，不会留在后台占着端口。
-// 测试程序自己扮演两个角色：子进程当 ProxySwitch，按启动内核的方式启动孙进程并放进作业对象；
+// Proxi 被强行结束（崩溃、在任务管理器里结束）时，作业对象让内核跟着结束，不会留在后台占着端口。
+// 测试程序自己扮演两个角色：子进程当 Proxi，按启动内核的方式启动孙进程并放进作业对象；
 // 结束子进程后，孙进程也应随之结束。
-func TestCoreProcessEndsWithProxySwitch(t *testing.T) {
+func TestCoreProcessEndsWithProxi(t *testing.T) {
 	switch os.Getenv(jobTestRole) {
 	case "core":
 		time.Sleep(time.Minute)
 		return
 	case "app":
-		core := exec.Command(os.Args[0], "-test.run=^TestCoreProcessEndsWithProxySwitch$")
+		core := exec.Command(os.Args[0], "-test.run=^TestCoreProcessEndsWithProxi$")
 		core.Env = append(os.Environ(), jobTestRole+"=core")
 		prepareCoreCommand(core)
 		if err := core.Start(); err != nil {
@@ -37,7 +37,7 @@ func TestCoreProcessEndsWithProxySwitch(t *testing.T) {
 		return
 	}
 
-	app := exec.Command(os.Args[0], "-test.run=^TestCoreProcessEndsWithProxySwitch$")
+	app := exec.Command(os.Args[0], "-test.run=^TestCoreProcessEndsWithProxi$")
 	app.Env = append(os.Environ(), jobTestRole+"=app")
 	output, err := app.StdoutPipe()
 	if err != nil {
@@ -57,7 +57,7 @@ func TestCoreProcessEndsWithProxySwitch(t *testing.T) {
 		}
 	}
 	if pid == 0 {
-		t.Fatalf("扮演 ProxySwitch 的子进程没有启动内核：%q", lines)
+		t.Fatalf("扮演 Proxi 的子进程没有启动内核：%q", lines)
 	}
 	core, err := os.FindProcess(pid)
 	if err != nil {
@@ -82,6 +82,6 @@ func TestCoreProcessEndsWithProxySwitch(t *testing.T) {
 	case <-exited:
 	case <-time.After(10 * time.Second):
 		_ = core.Kill()
-		t.Fatal("ProxySwitch 被结束后内核应跟着结束")
+		t.Fatal("Proxi 被结束后内核应跟着结束")
 	}
 }

@@ -50,7 +50,7 @@ func TestToastNotifier(t *testing.T) {
 	} else {
 		t.Logf("通知设置：%d", setting)
 	}
-	notice := Notice{Level: noticeWarning, Title: "ProxySwitch 测试", Text: "测试通知 <马上收起> & 恢复", Actions: []NoticeAction{{Label: "关闭代理", Link: turnOffLink()}}}
+	notice := Notice{Level: noticeWarning, Title: "Proxi 测试", Text: "测试通知 <马上收起> & 恢复", Actions: []NoticeAction{{Label: "关闭代理", Link: turnOffLink()}}}
 	toast, err := createToast(toastXml(notice, icon), "test")
 	if err != nil {
 		t.Fatal(err)
@@ -81,8 +81,8 @@ func TestToaster(t *testing.T) {
 	toaster.iconDir = t.TempDir()
 	done := make(chan bool)
 	for _, notice := range []Notice{
-		{Level: noticeInfo, Title: "ProxySwitch 测试", Text: "一秒后收起", Icon: iconStateOn, Color: "#2563eb"},
-		{Level: noticeError, Title: "ProxySwitch 测试", Text: "出错的通知"},
+		{Level: noticeInfo, Title: "Proxi 测试", Text: "一秒后收起", Icon: iconStateOn, Color: "#2563eb"},
+		{Level: noticeError, Title: "Proxi 测试", Text: "出错的通知"},
 	} {
 		if !toaster.show(notice, time.Second) {
 			t.Fatal("通知线程没有接收通知")

@@ -27,7 +27,7 @@ func init() {
 	})
 }
 
-// ProxySwitch 下载的内核要和发布时写入的 SHA-256 一致才以管理员身份运行；配置里指定的内核不校验。
+// Proxi 下载的内核要和发布时写入的 SHA-256 一致才以管理员身份运行；配置里指定的内核不校验。
 func TestStartVerifiedCore(t *testing.T) {
 	binary := requireCoreBinary(t)
 	dir := t.TempDir()
