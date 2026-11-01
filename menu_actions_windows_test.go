@@ -59,6 +59,25 @@ func TestTrayMenuOrganizationPreservesCommands(t *testing.T) {
 	}
 }
 
+func TestTrayMenuKeyboardLetters(t *testing.T) {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+	r := menuHeaderRendererAtDpi(96)
+	defer r.close()
+	var texts []*uint16
+	menu := buildMenu([]MenuItem{{Text: appName, Header: "brand"}, {Id: 1, Text: "bywave", Children: []MenuItem{{Id: 11, Text: "使用这个配置"}}}, {Id: 2, Text: "Backup", Disabled: true}}, &texts, r)
+	if menu == 0 {
+		t.Fatal("创建菜单失败")
+	}
+	defer procDestroyMenu.Call(menu)
+	if result := r.menuChar(menu, 'B'); result != 1|2<<16 {
+		t.Fatalf("字母应定位可用配置，并忽略禁用项：%x", result)
+	}
+	if result := r.menuChar(menu, 'P'); result != 0 {
+		t.Error("不能通过字母激活只读品牌信息")
+	}
+}
+
 func TestTrayMenuNativeRowsAndRendering(t *testing.T) {
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()

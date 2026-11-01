@@ -16,10 +16,6 @@ import (
 	"unsafe"
 )
 
-var (
-	procGetMenuItemInfoW = user32.NewProc("GetMenuItemInfoW")
-)
-
 func TestMenuHeaderDisabledButKeepsFullText(t *testing.T) {
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
