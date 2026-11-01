@@ -47,6 +47,9 @@ type MenuItem struct {
 	Separator bool
 	Bitmap    uintptr
 	Children  []MenuItem
+	// Header 是只读信息的视觉样式；保持禁用状态，但由程序绘制清晰的文字和颜色。
+	Header string
+	Accent string
 }
 
 type Tray struct {
@@ -61,6 +64,7 @@ type Tray struct {
 	uiThread       uint32
 	uiQueue        chan func()
 	windowProc     uintptr
+	menuHeaders    *menuHeaderRenderer
 
 	DoubleClickEnabled bool
 	clickPending       bool
@@ -177,7 +181,12 @@ func (tray *Tray) StartTimer(id uintptr, interval time.Duration) {
 // ShowMenu 在 anchor 处弹出菜单，返回选中项的 Id，没有选择时返回 0。
 func (tray *Tray) ShowMenu(items []MenuItem, anchor point) uint32 {
 	var texts []*uint16
-	menu := buildMenu(items, &texts)
+	headers := newMenuHeaderRenderer(tray.window)
+	headers.fitMonitor(anchor)
+	defer headers.close()
+	tray.menuHeaders = headers
+	defer func() { tray.menuHeaders = nil }()
+	menu := buildMenu(items, &texts, headers)
 	if menu == 0 {
 		return 0
 	}
@@ -193,7 +202,7 @@ func (tray *Tray) ShowMenu(items []MenuItem, anchor point) uint32 {
 }
 
 // buildMenu 创建弹出菜单，带 Children 的项作为子菜单。texts 保存菜单文字，菜单关闭前不能释放。
-func buildMenu(items []MenuItem, texts *[]*uint16) uintptr {
+func buildMenu(items []MenuItem, texts *[]*uint16, headers *menuHeaderRenderer) uintptr {
 	menu, _, _ := procCreatePopupMenu.Call()
 	if menu == 0 {
 		return 0
@@ -206,7 +215,7 @@ func buildMenu(items []MenuItem, texts *[]*uint16) uintptr {
 			continue
 		}
 		flags := uintptr(mfString)
-		if item.Disabled {
+		if item.Disabled || item.Header != "" {
 			flags |= mfGrayed
 		}
 		if item.Checked {
@@ -215,7 +224,7 @@ func buildMenu(items []MenuItem, texts *[]*uint16) uintptr {
 		text := utf16Pointer(item.Text)
 		*texts = append(*texts, text)
 		if len(item.Children) > 0 {
-			subMenu := buildMenu(item.Children, texts)
+			subMenu := buildMenu(item.Children, texts, headers)
 			if subMenu == 0 {
 				continue
 			}
@@ -226,7 +235,11 @@ func buildMenu(items []MenuItem, texts *[]*uint16) uintptr {
 			continue
 		}
 		procAppendMenuW.Call(menu, flags, uintptr(item.Id), uintptr(unsafe.Pointer(text)))
-		setMenuItemStyle(menu, uintptr(item.Id), false, item)
+		if item.Header != "" && headers != nil {
+			headers.register(menu, uintptr(position), item)
+		} else {
+			setMenuItemStyle(menu, uintptr(item.Id), false, item)
+		}
 		position++
 		if item.Default {
 			procSetMenuDefaultItem.Call(menu, uintptr(item.Id), 0)
@@ -329,6 +342,14 @@ func pointerFromParameter(parameter *uintptr) unsafe.Pointer {
 
 func (tray *Tray) windowProcedure(window, messageId, wParam, lParam uintptr) uintptr {
 	switch uint32(messageId) {
+	case wmMeasureItem:
+		if tray.menuHeaders != nil && tray.menuHeaders.measure((*measureItemStruct)(pointerFromParameter(&lParam))) {
+			return 1
+		}
+	case wmDrawItem:
+		if tray.menuHeaders != nil && tray.menuHeaders.draw((*drawItemStruct)(pointerFromParameter(&lParam))) {
+			return 1
+		}
 	case wmTrayCallback:
 		tray.handleTrayEvent(uint32(lParam&0xFFFF), wParam)
 		return 0

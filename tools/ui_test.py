@@ -216,6 +216,7 @@ def main():
             expected = ("status of 400", "status of 409", "status of 502")
             page.on("console", lambda message: errors.append(f"console: {message.text}") if message.type == "error" and not any(text in message.text for text in expected) else None)
             run_flows(page, api, info, config_path)
+            run_experience_flows(page)
             check(not errors, "没有脚本错误" + ("" if not errors else f"：{errors[:3]}"))
             browser.close()
     finally:
@@ -225,6 +226,98 @@ def main():
         print(f"{len(failures)} 项失败")
         sys.exit(1)
     print("全部通过")
+
+
+def run_experience_flows(page):
+    """用独立配置模拟慢操作、保存排队和失败，检查用户能看到的反馈。"""
+    process, info = start_server(tempfile.mkdtemp(prefix="proxyswitch-experience-"))
+    api = Api(info["url"])
+    def request_arrived(queue):
+        # 等待网络回调时继续处理浏览器事件，不能只用 Python 的 sleep。
+        page.wait_for_timeout(20)
+        return len(queue) == 1
+    try:
+        config = api.call("GET", "/api/state")["config"]
+        config["profiles"] = [{"name": "体验走查", "server": info["http_proxy"], "color": "#16a34a", "apply_to": ["system"]}]
+        api.call("PUT", "/api/config", config)
+        page.set_viewport_size({"width": 1120, "height": 800})
+        page.goto(info["url"])
+        page.wait_for_selector(".profile")
+
+        pending = []
+        page.route("**/api/on", lambda route: pending.append(route))
+        page.click(".hero-switch")
+        check(wait_until(lambda: request_arrived(pending)), "开启操作提交后立即进入等待状态")
+        check(page.is_disabled(".hero-switch") and page.is_disabled(".nav-status .switch"), "处理期间两个代理开关均不能重复点击")
+        check("正在开启代理" in page.inner_text(".hero-title"), "慢操作明确显示正在做什么")
+        page.evaluate("actions.toggle()")
+        check(len(pending) == 1, "重复操作只提交一次请求")
+        route = pending.pop()
+        route.fulfill(status=400, content_type="application/json", body=json.dumps({"error": "本次走查模拟开启失败"}))
+        check(wait_until(lambda: not page.is_disabled(".hero-switch")), "操作失败后自动恢复按钮")
+        check("操作失败" in page.inner_text("#toasts"), "操作失败有明确反馈")
+        page.unroute("**/api/on")
+        page.click(".hero-switch")
+        check(wait_until(lambda: api.call("GET", "/api/state")["status"]["state"] == "on" and not page.evaluate("app.busy")), "失败后可以重新开启")
+
+        warning = page.evaluate("""() => {
+          const original = app.state.status;
+          app.state.status = { ...original, health: 'down', health_message: '走查模拟连接异常' };
+          renderNav(); renderPage();
+          const result = { title: document.querySelector('.hero-title').textContent, nav: document.querySelector('.nav-status-title').textContent };
+          app.state.status = original; renderNav(); renderPage();
+          return result;
+        }""")
+        check(warning["title"] == "代理连接异常" and warning["nav"] == "代理连接异常", "开启设置与连接异常分别表达，主页面和侧栏状态一致")
+
+        page.click("[data-page=general]")
+        held = []
+        page.route("**/api/config", lambda route: held.append(route))
+        page.focus("select[data-setting=notify_seconds]")
+        page.select_option("select[data-setting=notify_seconds]", "8")
+        check(wait_until(lambda: request_arrived(held)), "第一项修改开始保存")
+        page.focus("select[data-setting=startup_action]")
+        page.select_option("select[data-setting=startup_action]", "off")
+        first = held.pop(0)
+        first.fulfill(response=first.fetch())
+        check(wait_until(lambda: request_arrived(held)), "后续修改按顺序保存")
+        check(page.evaluate("app.saving") and page.locator("[data-save-status=saving]").count() == 1, "队列没完成时始终显示正在保存")
+        check(page.input_value("select[data-setting=startup_action]") == "off", "前一项保存返回不会盖掉后一项的选择")
+        check(page.evaluate("document.activeElement.dataset.setting") == "startup_action", "保存和轮询更新后仍保留下拉框焦点")
+        page.focus("select[data-setting=settings_window]")
+        page.select_option("select[data-setting=settings_window]", "browser")
+        second = held.pop(0)
+        second.fulfill(response=second.fetch())
+        check(wait_until(lambda: request_arrived(held)), "前一项返回时继续修改也会加入保存")
+        third = held.pop(0)
+        third.fulfill(response=third.fetch())
+        check(wait_until(lambda: page.locator("[data-save-status=saved]").count() == 1), "全部完成后明确显示已保存并生效")
+        saved = read_config(info["config"])
+        check(saved["notify_seconds"] == 8 and saved["startup_action"] == "off" and saved["settings_window"] == "browser", "快速连续修改三项均完整保存")
+
+        page.focus("select[data-setting=notify_seconds]")
+        page.select_option("select[data-setting=notify_seconds]", "3")
+        check(wait_until(lambda: request_arrived(held)), "新的修改进入保存状态")
+        failed = held.pop()
+        failed.fulfill(status=400, content_type="application/json", body=json.dumps({"error": "本次走查模拟保存失败"}))
+        check(wait_until(lambda: page.locator("[data-save-status=error]").count() == 1), "保存失败有持续可见的提示")
+        check(page.input_value("select[data-setting=notify_seconds]") == "8", "保存失败后显示实际保留的设置")
+        page.unroute("**/api/config")
+        page.select_option("select[data-setting=notify_seconds]", "3")
+        check(wait_until(lambda: page.locator("[data-save-status=saved]").count() == 1), "失败后重试可成功保存")
+        page.click("[data-action=set-theme][data-value=dark]")
+        check(wait_until(lambda: page.evaluate("!app.saving")), "主题保存完成")
+        check(page.evaluate("document.activeElement.dataset.value") == "dark", "保存后主题按钮焦点仍在选择的选项")
+        shot(page, "17_saved_feedback")
+
+        page.set_viewport_size({"width": 720, "height": 640})
+        for name in ["proxies", "network", "general", "system", "about"]:
+            page.click(f"[data-page={name}]")
+            check(not page.evaluate("document.documentElement.scrollWidth > innerWidth"), f"紧凑窗口的 {name} 页面无需横向滚动")
+    finally:
+        page.unroute("**/api/on")
+        page.unroute("**/api/config")
+        process.terminate()
 
 
 def shot(page, name):
