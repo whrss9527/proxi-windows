@@ -6,7 +6,25 @@ import (
 	"math"
 )
 
-// 固定的应用标识：蓝紫色圆角底上的 P 形路径与分流端点；不随代理开关变化。
+// 固定的应用标识：蓝紫色圆角底上的连接与分流图形；不随代理开关变化。
+var brandPaths = makeBrandPaths()
+
+func makeBrandPaths() [][4]float64 {
+	paths := [][4]float64{{18, 32, 24, 32}, {42, 20, 46, 20}, {42, 44, 46, 44}}
+	for _, direction := range []float64{-1, 1} {
+		previousX, previousY := 24.0, 32.0
+		for step := 1; step <= 16; step++ {
+			t := float64(step) / 16
+			u := 1 - t
+			x := 24*u*u*u + 34*3*u*u*t + 32*3*u*t*t + 42*t*t*t
+			y := 32 + direction*12*(3*t*t-2*t*t*t)
+			paths = append(paths, [4]float64{previousX, previousY, x, y})
+			previousX, previousY = x, y
+		}
+	}
+	return paths
+}
+
 func renderBrandIcon(size int) *image.NRGBA {
 	return sampleIcon(size, func(x, y float64) color.NRGBA {
 		x, y = x*64, y*64
@@ -15,14 +33,14 @@ func renderBrandIcon(size int) *image.NRGBA {
 		}
 		ratio := (y - 4) / 56
 		paint := color.NRGBA{uint8(68 + 23*ratio), uint8(137 - 60*ratio), uint8(255 - 23*ratio), 255}
-		distance := math.Min(segmentDistance(x, y, 22, 47, 22, 18), math.Min(segmentDistance(x, y, 22, 18, 33, 18), segmentDistance(x, y, 22, 36, 33, 36)))
-		if x >= 33 {
-			distance = math.Min(distance, math.Abs(math.Hypot(x-33, y-27)-9))
+		distance := math.Inf(1)
+		for _, path := range brandPaths {
+			distance = math.Min(distance, segmentDistance(x, y, path[0], path[1], path[2], path[3]))
 		}
-		if distance <= 3 {
+		if distance <= 2.5 || math.Hypot(x-18, y-32) <= 6 || math.Hypot(x-46, y-20) <= 5 {
 			paint = iconWhite
 		}
-		if math.Hypot(x-44, y-46) <= 4.5 {
+		if math.Hypot(x-46, y-44) <= 6 {
 			paint = color.NRGBA{128, 241, 216, 255}
 		}
 		return paint
