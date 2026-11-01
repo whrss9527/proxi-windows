@@ -349,6 +349,10 @@ func pointerFromParameter(parameter *uintptr) unsafe.Pointer {
 
 func (tray *Tray) windowProcedure(window, messageId, wParam, lParam uintptr) uintptr {
 	switch uint32(messageId) {
+	case 0x0120: // WM_MENUCHAR
+		if tray.menuHeaders != nil {
+			return tray.menuHeaders.menuChar(lParam, rune(wParam&0xffff))
+		}
 	case wmMeasureItem:
 		if tray.menuHeaders != nil && tray.menuHeaders.measure((*measureItemStruct)(pointerFromParameter(&lParam))) {
 			return 1

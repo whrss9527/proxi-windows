@@ -5,8 +5,54 @@ package main
 import (
 	"fmt"
 	"image/color"
+	"syscall"
+	"unicode"
 	"unsafe"
 )
+
+var procGetMenuItemInfoW = user32.NewProc("GetMenuItemInfoW")
+
+// 自绘菜单需要显式处理字母定位；方向键、Enter 和 Esc 仍交给系统。
+func (r *menuHeaderRenderer) menuChar(menu uintptr, character rune) uintptr {
+	count, _, _ := user32.NewProc("GetMenuItemCount").Call(menu)
+	if count > 10000 {
+		return 0
+	}
+	var matches []uintptr
+	selected := ^uintptr(0)
+	for position := uintptr(0); position < count; position++ {
+		info := menuItemInfoW{mask: miimData | 1}
+		info.size = uint32(unsafe.Sizeof(info))
+		if ok, _, _ := procGetMenuItemInfoW.Call(menu, position, 1, uintptr(unsafe.Pointer(&info))); ok == 0 {
+			continue
+		}
+		if info.state&0x80 != 0 {
+			selected = position
+		}
+		entry, ok := r.entries[info.itemData]
+		if !ok || entry.kind != "" || entry.disabled || info.state&3 != 0 {
+			continue
+		}
+		for _, first := range syscall.UTF16ToString(entry.text) {
+			if unicode.ToLower(first) == unicode.ToLower(character) {
+				matches = append(matches, position)
+			}
+			break
+		}
+	}
+	if len(matches) == 1 {
+		return matches[0] | 2<<16
+	}
+	if len(matches) > 1 {
+		for _, position := range matches {
+			if selected == ^uintptr(0) || position > selected {
+				return position | 3<<16
+			}
+		}
+		return matches[0] | 3<<16
+	}
+	return 0
+}
 
 type popupMenuInfo struct {
 	size, mask, style, maxHeight uint32
