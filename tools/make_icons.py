@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """生成程序图标 assets/app.ico、文档用的 docs/logo.png 和安装程序欢迎页左侧的 assets/installer-side.bmp。
 
-图标是蓝紫色圆角方块上的 P 形路径和分流端点，与 web/brand.svg 及 brand.go 保持一致。
+图标是蓝紫色圆角方块上的连接与分流图形，与 web/brand.svg 及 brand.go 保持一致。
 应用标识不表示开关状态；托盘在其上叠加状态角标，或按用户选择显示开关。
 
 用法：python3 tools/make_icons.py（需要 Pillow）
@@ -35,18 +35,18 @@ def render(size):
     tile = vertical_gradient(canvas_size, (68, 137, 255), (91, 77, 232))
     canvas.paste(tile, (0, 0), mask)
 
-    # P 形路径：竖线、上下横线与右半圆弧，端点和转角用圆帽衔接。
+    # 一路连接分成两条平滑的路径；使用圆点和曲线表达连接，不使用字母。
     draw = ImageDraw.Draw(canvas)
-    def line(points, width):
-        draw.line([(x * unit, y * unit) for x, y in points], fill="white", width=round(width * unit))
-        for x, y in points:
-            radius = width / 2
-            draw.ellipse([(x - radius) * unit, (y - radius) * unit, (x + radius) * unit, (y + radius) * unit], fill="white")
-    line([(22, 47), (22, 18), (33, 18)], 6)
-    line([(22, 36), (33, 36)], 6)
-    # Pillow 的描边向内，修正圆弧的包围框以与 SVG 的居中描边一致。
-    draw.arc([21 * unit, 15 * unit, 45 * unit, 39 * unit], start=270, end=90, fill="white", width=round(6 * unit))
-    draw.ellipse([39.5 * unit, 41.5 * unit, 48.5 * unit, 50.5 * unit], fill=(128, 241, 216, 255))
+    for direction in (-1, 1):
+        points = [(18, 32), (24, 32)]
+        for step in range(1, 33):
+            t = step / 32
+            u = 1 - t
+            points.append((24*u**3 + 34*3*u*u*t + 32*3*u*t*t + 42*t**3, 32 + direction*12*(3*t*t-2*t**3)))
+        points.append((46, 32 + direction*12))
+        draw.line([(x*unit, y*unit) for x,y in points], fill="white", width=round(5*unit), joint="curve")
+    for x,y,radius,color in [(18,32,6,"white"),(46,20,5,"white"),(46,44,6,(128,241,216,255))]:
+        draw.ellipse([(x-radius)*unit,(y-radius)*unit,(x+radius)*unit,(y+radius)*unit],fill=color)
 
     return canvas.resize((size, size), Image.LANCZOS)
 

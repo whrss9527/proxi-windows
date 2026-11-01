@@ -652,7 +652,6 @@ def run_flows(page, api, info, config_path):
     check(wait_until(lambda: read_config(config_path).get("tray_icon") == "toggle"), "托盘可以选择按配置颜色显示开关")
     page.click("[data-action=set-tray-icon][data-value=brand]")
     check(wait_until(lambda: read_config(config_path).get("tray_icon") == "brand"), "托盘可以选择应用图标与状态角标")
-    page.locator("[data-action=set-tray-icon][data-value=brand]").scroll_into_view_if_needed()
     shot(page, "16_icon_settings_dark")
     page.click("[data-page=proxies]")
     for name in ["本机代理", "学校 PAC", "SOCKS5 备用"]:
