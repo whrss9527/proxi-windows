@@ -64,11 +64,12 @@ const (
 type App struct {
 	// 订阅的下载和设置页上的订阅操作；托盘程序启动后才创建，命令行模式没有。
 	*subscriptionService
-	paths    Paths
-	engine   *Engine
-	tray     *Tray
-	settings *SettingsServer
-	floating *floatingWindow
+	paths         Paths
+	engine        *Engine
+	tray          *Tray
+	settings      *SettingsServer
+	floating      *floatingWindow
+	settingsIcons settingsWindowIcons
 
 	icons        map[string]uintptr
 	menuBitmaps  map[string]uintptr
@@ -274,6 +275,7 @@ func (app *App) refresh() {
 		app.tunActive = active
 	}
 	app.tray.Update(app.iconFor(status), app.tooltipFor(status))
+	app.settingsIcons.refresh(openedSettingsAddress != "" && app.engine.Config() != nil && app.engine.Config().SettingsWindow == "app")
 	if app.floating != nil {
 		app.floating.refresh(status)
 	}
@@ -1041,6 +1043,7 @@ func (app *App) onEndSession() {
 }
 
 func (app *App) onDestroy() {
+	app.settingsIcons.close()
 	if app.floating != nil {
 		app.floating.close()
 		app.floating = nil
@@ -1131,6 +1134,7 @@ func (app *App) openSettingsWith(page, action, argument string) {
 	if err := openSettingsWindow(address, mode); err != nil {
 		app.notify(Notice{Level: noticeError, Title: "无法打开设置", Text: err.Error()})
 	}
+	app.settingsIcons.refresh(mode == "app" && openedSettingsAddress != "")
 }
 
 // ---------- 后台检查 ----------
