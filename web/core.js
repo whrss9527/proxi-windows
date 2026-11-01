@@ -207,17 +207,33 @@ async function api(method, path, body) {
 
 const toastIcons = { success: "success", info: "info", warning: "warning", danger: "error" };
 
-function toast(message, kind = "success", title = "") {
+function dismissToast(key) {
+  for (const element of document.querySelectorAll("#toasts .toast")) {
+    if (element.dataset.key === key) {
+      element.remove();
+    }
+  }
+}
+
+function toast(message, kind = "success", title = "", { key = "", duration = null } = {}) {
   const container = document.getElementById("toasts");
+  if (key) {
+    dismissToast(key);
+  }
   const element = document.createElement("div");
   element.className = `toast ${kind}`;
+  if (key) {
+    element.dataset.key = key;
+  }
   setHtml(element, html`${icon(toastIcons[kind] || "info")}<div class="toast-text">${title ? html`<strong>${title}</strong>\n` : ""}${message}</div>`);
   container.appendChild(element);
-  const duration = kind === "danger" || kind === "warning" ? 6000 : 3200;
-  setTimeout(() => {
-    element.classList.add("leaving");
-    setTimeout(() => element.remove(), 200);
-  }, duration);
+  const lifetime = duration === null ? (kind === "danger" || kind === "warning" ? 6000 : 3200) : duration;
+  if (lifetime > 0) {
+    setTimeout(() => {
+      element.classList.add("leaving");
+      setTimeout(() => element.remove(), 200);
+    }, lifetime);
+  }
 }
 
 // ---------- 对话框 ----------

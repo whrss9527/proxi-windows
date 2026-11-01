@@ -497,6 +497,8 @@ async function runOperation(path, body, successMessage, failureTitle = "部分�
   if (app.busy) {
     return false;
   }
+  const feedbackKey = ["/api/on", "/api/off", "/api/use"].includes(path) ? "proxy-operation" : `operation:${path}`;
+  dismissToast(feedbackKey);
   app.busy = true;
   app.operationLabel = path === "/api/on" ? "正在开启代理…" : path === "/api/off" ? "正在关闭代理…" : path === "/api/use" ? `正在切换到「${body.name}」…` : "正在处理…";
   renderNav();
@@ -507,7 +509,7 @@ async function runOperation(path, body, successMessage, failureTitle = "部分�
     app.operationLabel = "";
     receiveState(state, { force: true });
     if (successMessage) {
-      toast(successMessage);
+      toast(successMessage, "success", "", { key: feedbackKey });
     }
     return true;
   } catch (error) {
@@ -515,12 +517,12 @@ async function runOperation(path, body, successMessage, failureTitle = "部分�
     app.operationLabel = "";
     if (error.state) {
       receiveState(error.state, { force: true });
-      toast(error.message, "warning", failureTitle);
+      toast(error.message, "warning", failureTitle, { key: feedbackKey });
     } else {
       renderNav();
       renderPage();
       if (error.status !== 0 && error.status !== 403) {
-        toast(error.message, "danger", "操作失败");
+        toast(error.message, "danger", "操作失败", { key: feedbackKey });
       }
     }
     return false;
@@ -529,6 +531,9 @@ async function runOperation(path, body, successMessage, failureTitle = "部分�
 
 // saveConfig 修改配置并立即保存；多次修改按顺序保存。返回的 Promise 在保存完成后给出是否保存成功；
 // 没保存成功时提示原因，给了 onError 时交给它显示。
+let saveFeedbackTimer = null;
+let saveFeedbackMessage = "";
+
 function saveConfig(mutate, successMessage = "", { onError = null } = {}) {
   const next = clone(app.config);
   mutate(next);
@@ -536,6 +541,19 @@ function saveConfig(mutate, successMessage = "", { onError = null } = {}) {
   app.pendingSaves++;
   app.saving = true;
   app.saveResult = "";
+  if (app.pendingSaves === 1) {
+    saveFeedbackMessage = "";
+    dismissToast("config-save");
+    clearTimeout(saveFeedbackTimer);
+    saveFeedbackTimer = setTimeout(() => {
+      if (app.saving) {
+        toast("正在保存修改…", "info", "", { key: "config-save", duration: 0 });
+      }
+    }, 300);
+  }
+  if (successMessage) {
+    saveFeedbackMessage = successMessage;
+  }
   renderPage();
   saveQueue = saveQueue.then(async () => {
     try {
@@ -545,10 +563,12 @@ function saveConfig(mutate, successMessage = "", { onError = null } = {}) {
       if (!app.saving) {
         app.config = clone(state.config);
         app.saveResult = "saved";
+        clearTimeout(saveFeedbackTimer);
       }
       receiveState(state, { force: true });
-      if (successMessage) {
-        toast(successMessage);
+      if (!app.saving) {
+        toast(saveFeedbackMessage || "修改已生效", "success", "已保存", { key: "config-save", duration: 2200 });
+        saveFeedbackMessage = "";
       }
       return true;
     } catch (error) {
@@ -557,12 +577,15 @@ function saveConfig(mutate, successMessage = "", { onError = null } = {}) {
       app.saveResult = "error";
       if (!app.saving) {
         app.config = clone(app.state.config);
+        clearTimeout(saveFeedbackTimer);
+        dismissToast("config-save");
+        saveFeedbackMessage = "";
       }
       if (error.status !== 0 && error.status !== 403) {
         if (onError) {
           onError(error.message);
         } else {
-          toast(error.message, "danger", "没有保存");
+          toast(error.message, "danger", "没有保存", { key: "config-save" });
         }
       }
       renderPage();
